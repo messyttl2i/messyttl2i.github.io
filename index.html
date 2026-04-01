@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>MessyTT&L2i</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Noto Sans TC', sans-serif;
+  background: #A7C7E7;
+  color: #8A5FA2;
+}
+
+/* header */
+header {
+  padding: 20px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* 商品區 */
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.product {
+  background: white;
+  padding: 10px;
+  text-align: center;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+.product:hover {
+  transform: scale(1.05);
+}
+
+.product img {
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* 按鈕 */
+button {
+  background: #8A5FA2;
+  color: white;
+  border: none;
+  padding: 10px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+/* popup */
+.popup {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  display: none;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>MessyTT&L2i</header>
+
+<section class="products">
+  <div class="product">
+    <img src="https://via.placeholder.com/200">
+    <p>商品名稱</p>
+    <button onclick="showPopup()">加入購物</button>
+  </div>
+</section>
+
+<div class="popup" id="popup">
+  <h3>加入會員</h3>
+  <input type="email" placeholder="輸入Email"><br><br>
+  <button onclick="submitForm()">送出</button>
+</div>
+
+<script>
+function showPopup() {
+  document.getElementById("popup").style.display = "block";
+}
+
+function submitForm() {
+  alert("註冊成功！");
+}
+</script>
+
+</body>
+</html>
