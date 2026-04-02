@@ -79,3 +79,190 @@
         /* --- 商品展示區 (直向兩排) --- */
         .main-container { max-width: 1100px; margin: 40px auto; padding: 0 4%; }
         .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; }
+
+        .product-item { background: transparent; transition: 0.3s; }
+
+        /* 滾動圖片 Swiper */
+        .swiper { width: 100%; aspect-ratio: 1 / 1.1; background: #e0e4e7; margin-bottom: 15px; border-radius: 2px; }
+        .swiper-slide img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 顏色選取圓點 */
+        .color-dots { display: flex; gap: 8px; margin-bottom: 12px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; }
+
+        .product-info { text-align: left; }
+        .product-name { font-size: 0.95rem; font-weight: 500; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .product-desc { font-size: 0.75rem; opacity: 0.6; margin-bottom: 12px; line-height: 1.5; height: 3em; overflow: hidden; }
+        .product-price { font-size: 0.9rem; margin-bottom: 18px; font-weight: 500; }
+
+        /* 按鈕風格 */
+        .button-group { display: flex; gap: 10px; }
+        .btn {
+            flex: 1; padding: 12px 0; font-size: 0.7rem; letter-spacing: 1px; cursor: pointer;
+            transition: 0.3s; border-radius: 0; text-transform: uppercase; border: none;
+        }
+        .btn-add { background: none; border: 1px solid var(--text-amethyst); color: var(--text-amethyst); }
+        .btn-add:hover { background: var(--text-amethyst); color: var(--white); }
+        .btn-buy { background: var(--text-amethyst); border: 1px solid var(--text-amethyst); color: var(--white); }
+        .btn-buy:hover { opacity: 0.8; }
+
+        /* 即時反應 Toast */
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 12px 25px; font-size: 0.8rem; opacity: 0; transition: 0.5s; z-index: 2000; pointer-events: none; }
+
+        @media (max-width: 768px) {
+            .product-grid { grid-template-columns: 1fr; } /* 手機改為一排 */
+            header { height: 80px; }
+            .header-left a { display: none; }
+            .header-center img { height: 60px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <div onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i> SHOP</div>
+        <a href="#">INFO</a>
+    </div>
+    
+    <div class="header-center">
+        <!-- 你的全新 Logo 路徑 -->
+        <img src="images/S__80977927-.png" alt="MessyTT&L2i Logo" onclick="location.href='index.html'">
+    </div>
+
+    <div class="header-right">
+        <a href="#" onclick="showToast('會員登入功能即將上線')">Login</a>
+        <i class="fa-solid fa-bag-shopping" onclick="showToast('購物袋目前沒有商品')"></i>
+        <i class="fa-solid fa-magnifying-glass"></i>
+    </div>
+</header>
+
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- 側邊欄選單 -->
+<div class="sidebar" id="sidebar">
+    <div style="text-align: right; cursor: pointer;" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
+    <ul class="nav-list">
+        <li class="nav-item"><a href="#" class="nav-link" style="font-weight: 600;">HOME</a></li>
+        <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
+        <li class="nav-item">
+            <div class="nav-link" onclick="toggleDropdown('m-drop')">ALL MESSYTT <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div class="dropdown-content" id="m-drop">
+                <a href="#" class="sub-item">Clothing</a>
+                <a href="#" class="sub-item">Original Goods</a>
+                <a href="#" class="sub-item">Wearable Device</a>
+            </div>
+        </li>
+        <li class="nav-item">
+            <div class="nav-link" onclick="toggleDropdown('l-drop')">ALL L2I <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div class="dropdown-content" id="l-drop">
+                <a href="#" class="sub-item">Necklace</a>
+                <a href="#" class="sub-item">Ring</a>
+            </div>
+        </li>
+        <li class="nav-item"><a href="#" class="nav-link">CONTACT US</a></li>
+    </ul>
+    <div style="margin-top: 40px; font-size: 0.75rem; opacity: 0.8; border-top: 1px solid rgba(138, 95, 162, 0.1); padding-top: 20px;">
+        <p><i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT</p><br>
+        <p><i class="fa-brands fa-instagram"></i> @6tto.o ・ L2i</p>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="product-grid">
+        
+        <!-- 商品 1 -->
+        <div class="product-item">
+            <div class="swiper mySwiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide"><img src="images/S__81002508_0.jpg" alt="Product 1-1"></div>
+                    <div class="swiper-slide"><img src="images/S__81002509_0.jpg" alt="Product 1-2"></div>
+                </div>
+                <div class="swiper-pagination"></div>
+            </div>
+            <div class="product-info">
+                <div class="color-dots">
+                    <div class="dot" style="background: #E5E4E2;"></div>
+                    <div class="dot" style="background: #A7C7E7;"></div>
+                    <div class="dot" style="background: #FADADD;"></div>
+                </div>
+                <div class="product-name">MESSYTT : Cyber Object Necklace</div>
+                <div class="product-desc">以流動金屬感為核心，展現 Y2K 未來主義審美，每一件皆為獨特手工打造。</div>
+                <div class="product-price">NT$ 2,580</div>
+                <div class="button-group">
+                    <button class="btn btn-add" onclick="showToast('已成功加入購物車')">Add to Cart</button>
+                    <button class="btn btn-buy" onclick="handleBuy('https://payment.ecpay.com.tw/XXXX')">Buy Now</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 商品 2 -->
+        <div class="product-item">
+            <div class="swiper mySwiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide"><img src="images/S__81002510_0.jpg" alt="Product 2-1"></div>
+                    <div class="swiper-slide"><img src="images/S__81002511_0.jpg" alt="Product 2-2"></div>
+                </div>
+                <div class="swiper-pagination"></div>
+            </div>
+            <div class="product-info">
+                <div class="color-dots">
+                    <div class="dot" style="background: #8A5FA2;"></div>
+                    <div class="dot" style="background: #D6DADC;"></div>
+                </div>
+                <div class="product-name">L2i : Mesh Panel Baby-T</div>
+                <div class="product-desc">極簡剪裁搭配輕透網眼材質，在日常穿搭中展現若隱若現的層次感。</div>
+                <div class="product-price">NT$ 1,280</div>
+                <div class="button-group">
+                    <button class="btn btn-add" onclick="showToast('已成功加入購物車')">Add to Cart</button>
+                    <button class="btn btn-buy" onclick="handleBuy('你的綠界快速點擊連結')">Buy Now</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="toast">已更新操作</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+    // 初始化圖片輪播
+    const swiper = new Swiper('.mySwiper', {
+        loop: true,
+        pagination: { el: '.swiper-pagination', clickable: true },
+    });
+
+    // 側邊欄控制
+    function toggleSidebar() {
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('overlay');
+        sb.classList.toggle('active');
+        ov.style.display = sb.classList.contains('active') ? 'block' : 'none';
+    }
+
+    // 下拉選單控制
+    function toggleDropdown(id) {
+        document.getElementById(id).classList.toggle('show');
+    }
+
+    // 提示反饋
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+    }
+
+    // 購買處理
+    function handleBuy(url) {
+        showToast("正在前往結帳頁面...");
+        setTimeout(() => {
+            // window.location.href = url; // 串接綠界快速連結
+        }, 1200);
+    }
+</script>
+
+</body>
+</html>
