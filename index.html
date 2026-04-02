@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
     <!-- FontAwesome 圖標 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <!-- Swiper CSS -->
+    <!-- Swiper CSS (滾動圖片套件) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
     <style>
@@ -29,13 +29,13 @@
             overflow-x: hidden;
         }
 
-        /* --- 頂部 Header 佈局 --- */
+        /* --- Header 頂部 --- */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 4%;
-            background: rgba(214, 218, 220, 0.9);
+            padding: 0 4%;
+            background: rgba(214, 218, 220, 0.95);
             backdrop-filter: blur(10px);
             position: sticky;
             top: 0;
@@ -43,256 +43,39 @@
             height: 100px;
         }
 
-        /* 左側導航 */
-        .header-left {
-            display: flex;
-            gap: 25px;
-            flex: 1;
-        }
-        .header-left a, .menu-trigger {
+        .header-left { display: flex; gap: 30px; flex: 1; align-items: center; }
+        .header-left div, .header-left a {
             text-decoration: none;
             color: var(--text-amethyst);
-            font-size: 0.85rem;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
             cursor: pointer;
+            text-transform: uppercase;
         }
 
-        /* 中央 Logo */
-        .header-center {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-        }
-        .header-center img {
-            height: 80px; /* 根據 Logo 比例調整 */
-            cursor: pointer;
+        .header-center { flex: 1; display: flex; justify-content: center; }
+        .header-center img { 
+            height: 85px; /* 根據 Logo 比例可調整高度 */
+            cursor: pointer; 
             transition: 0.3s;
         }
         .header-center img:hover { transform: scale(1.05); }
 
-        /* 右側圖標 */
-        .header-right {
-            display: flex;
-            gap: 20px;
-            flex: 1;
-            justify-content: flex-end;
-            align-items: center;
-        }
-        .header-right a {
-            text-decoration: none;
-            color: var(--text-amethyst);
-            font-size: 0.8rem;
-        }
-        .header-right i { font-size: 1.2rem; cursor: pointer; }
+        .header-right { display: flex; gap: 20px; flex: 1; justify-content: flex-end; align-items: center; }
+        .header-right a { text-decoration: none; color: var(--text-amethyst); font-size: 0.8rem; letter-spacing: 1px; }
+        .header-right i { font-size: 1.1rem; cursor: pointer; }
 
-        /* --- 側邊選單 (Sidebar) --- */
-        .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.1); display: none; z-index: 1100;
-        }
-        .sidebar {
-            position: fixed; top: 0; left: -300px; width: var(--sidebar-width); height: 100%;
-            background: #F0F3F7; transition: 0.4s ease; z-index: 1101;
-            padding: 40px 30px; display: flex; flex-direction: column;
-        }
+        /* --- Sidebar 側邊選單 --- */
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.1); display: none; z-index: 1100; }
+        .sidebar { position: fixed; top: 0; left: -300px; width: var(--sidebar-width); height: 100%; background: #f4f6f8; transition: 0.4s ease; z-index: 1101; padding: 40px 30px; border-right: 1px solid rgba(138, 95, 162, 0.1); }
         .sidebar.active { left: 0; }
-        .nav-list { list-style: none; margin-top: 50px; flex-grow: 1; }
-        .nav-item { margin-bottom: 25px; border-bottom: 1px solid rgba(138, 95, 162, 0.05); padding-bottom: 10px; }
-        .nav-link { text-decoration: none; color: var(--text-amethyst); text-transform: uppercase; font-size: 0.9rem; cursor: pointer; display: flex; justify-content: space-between; }
+        .nav-list { list-style: none; margin-top: 40px; }
+        .nav-item { margin-bottom: 25px; }
+        .nav-link { text-decoration: none; color: var(--text-amethyst); text-transform: uppercase; font-size: 0.85rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .dropdown-content { max-height: 0; overflow: hidden; transition: 0.3s; padding-left: 10px; }
         .dropdown-content.show { max-height: 200px; margin-top: 10px; }
-        .sub-item { display: block; padding: 5px 0; color: var(--text-amethyst); opacity: 0.7; text-decoration: none; font-size: 0.8rem; }
+        .sub-item { display: block; padding: 6px 0; color: var(--text-amethyst); opacity: 0.7; text-decoration: none; font-size: 0.75rem; }
 
-        /* --- 商品列表區 (直向兩排) --- */
-        .main-container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 4%;
-        }
-
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 兩排佈局 */
-            gap: 30px;
-        }
-
-        .product-item {
-            margin-bottom: 40px;
-        }
-
-        /* 滾動圖片區域 */
-        .swiper {
-            width: 100%;
-            aspect-ratio: 1 / 1.2; /* 稍微長方形，更具時尚感 */
-            background: #E8EBEF;
-            margin-bottom: 15px;
-        }
-        .swiper-slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .product-info {
-            text-align: left;
-        }
-        .product-name {
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-            font-weight: 400;
-        }
-        .product-price {
-            font-size: 0.85rem;
-            opacity: 0.8;
-        }
-
-        /* --- 即時反應 Toast --- */
-        #toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: var(--text-amethyst); color: white;
-            padding: 10px 25px; border-radius: 2px; font-size: 0.8rem;
-            opacity: 0; transition: 0.5s; z-index: 2000;
-        }
-
-        /* 手機版調整 */
-        @media (max-width: 768px) {
-            header { height: 80px; }
-            .header-left { display: none; } /* 隱藏文字導航，改用三條線 */
-            .mobile-menu-btn { display: block !important; }
-            .header-center img { height: 50px; }
-        }
-    </style>
-</head>
-<body>
-
-<header>
-    <div class="header-left">
-        <div class="menu-trigger" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i> SHOP</div>
-        <a href="#">ARCHIVE</a>
-        <a href="#">INFO</a>
-    </div>
-    
-    <div class="header-center">
-        <!--images/S__80977927-.png-->
-        <img src="images/S__80977927-.png" alt="MessyTT&L2i Logo" onclick="location.href='index.html'">
-    </div>
-
-    <div class="header-right">
-        <a href="#" onclick="showToast('會員功能開發中')">Login</a>
-        <a href="#" onclick="showToast('會員功能開發中')">Register</a>
-        <i class="fa-solid fa-bag-shopping" onclick="showToast('購物袋為空')"></i>
-        <i class="fa-solid fa-magnifying-glass"></i>
-    </div>
-</header>
-
-<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-<div class="sidebar" id="sidebar">
-    <div style="text-align: right; cursor: pointer;" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
-    <ul class="nav-list">
-        <li class="nav-item"><a href="#" class="nav-link" style="font-weight: 600;">HOME</a></li>
-        <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
-        <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('m-drop')">ALL MESSYTT <i class="fa-solid fa-chevron-down"></i></div>
-            <div class="dropdown-content" id="m-drop">
-                <a href="#" class="sub-item">Clothing</a>
-                <a href="#" class="sub-item">Original Goods</a>
-                <a href="#" class="sub-item">Wearable Device</a>
-            </div>
-        </li>
-        <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('l-drop')">ALL L2I <i class="fa-solid fa-chevron-down"></i></div>
-            <div class="dropdown-content" id="l-drop">
-                <a href="#" class="sub-item">Necklace</a>
-                <a href="#" class="sub-item">Ring</a>
-            </div>
-        </li>
-        <li class="nav-item"><a href="#" class="nav-link">CONTACT US</a></li>
-    </ul>
-    
-    <div style="margin-top: 30px; font-size: 0.8rem;">
-        <p><i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT</p><br>
-        <p><i class="fa-brands fa-instagram"></i> @6tto.o ・ L2i</p>
-    </div>
-</div>
-
-<div class="main-container">
-    <div class="product-grid">
-        <!-- 商品 1 -->
-        <div class="product-item">
-            <div class="swiper mySwiper">
-                <div class="swiper-wrapper">
-                    <div class="swiper-slide"><img src="https://images.unsplash.com/photo-1571908591183-f203d9e034e3?q=80&w=600" alt="P1"></div>
-                    <div class="swiper-slide"><img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=600" alt="P1-detail"></div>
-                </div>
-                <div class="swiper-pagination"></div>
-            </div>
-            <div class="product-info">
-                <div class="product-name">CYBER BUTTERFLY : Necklace ( limited )</div>
-                <div class="product-price">NT$ 2,580</div>
-                <button onclick="handleCheckout()" style="margin-top: 10px; border: 1px solid var(--text-amethyst); background: none; color: var(--text-amethyst); padding: 5px 15px; cursor: pointer; font-size: 0.7rem;">BUY NOW</button>
-            </div>
-        </div>
-
-        <!-- 商品 2 -->
-        <div class="product-item">
-            <div class="swiper mySwiper">
-                <div class="swiper-wrapper">
-                    <div class="swiper-slide"><img src="https://images.unsplash.com/photo-1591123120675-6f7f1aae0e5b?q=80&w=600" alt="P2"></div>
-                </div>
-                <div class="swiper-pagination"></div>
-            </div>
-            <div class="product-info">
-                <div class="product-name">MESSYTT : Mesh Baby-T ( 3 colors )</div>
-                <div class="product-price">NT$ 1,080</div>
-                <button onclick="handleCheckout()" style="margin-top: 10px; border: 1px solid var(--text-amethyst); background: none; color: var(--text-amethyst); padding: 5px 15px; cursor: pointer; font-size: 0.7rem;">BUY NOW</button>
-            </div>
-        </div>
-
-        <!-- 可以複製更多商品項目 -->
-    </div>
-</div>
-
-<div id="toast">已更新成功</div>
-
-<!-- Swiper JS -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
-<script>
-    // 初始化 Swiper 輪播
-    const swiper = new Swiper('.mySwiper', {
-        loop: true,
-        pagination: { el: '.swiper-pagination', clickable: true },
-    });
-
-    // 側邊欄控制
-    function toggleSidebar() {
-        const sb = document.getElementById('sidebar');
-        const ov = document.getElementById('overlay');
-        sb.classList.toggle('active');
-        ov.style.display = sb.classList.contains('active') ? 'block' : 'none';
-    }
-
-    // 下拉選單
-    function toggleDropdown(id) {
-        document.getElementById(id).classList.toggle('show');
-    }
-
-    // 模擬結帳 (導向綠界)
-    function handleCheckout() {
-        showToast("正在前往結帳頁面...");
-        // window.location.href = "你的綠界商品網址";
-    }
-
-    // 提示反饋
-    function showToast(msg) {
-        const toast = document.getElementById('toast');
-        toast.innerText = msg;
-        toast.style.opacity = '1';
-        setTimeout(() => { toast.style.opacity = '0'; }, 2500);
-    }
-</script>
-
-</body>
-</html>
+        /* --- 商品展示區 (直向兩排) --- */
+        .main-container { max-width: 1100px; margin: 40px auto; padding: 0 4%; }
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; }
