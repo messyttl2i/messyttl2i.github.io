@@ -103,3 +103,61 @@ function submitForm() {
 
 </body>
 </html>
+<!-- 引入 Swiper (滾動圖片套件) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<style>
+  :root {
+    --main-bg: #D6DADC; /* Pantone 14-4005 */
+    --primary-color: #8A5FA2; /* Pantone 17-3628 */
+    --white: #ffffff;
+  }
+
+  body {
+    background-color: var(--main-bg);
+    color: var(--primary-color);
+    font-family: 'Noto Sans TC', sans-serif;
+    margin: 0;
+  }
+
+  /* 導覽列優化 */
+  header {
+    background: var(--white);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+
+  /* 商品卡片優化 */
+  .product-card {
+    background: var(--white);
+    border-radius: 0px; /* 參考 nit_alcove 偏向直角或微圓角 */
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    border: 1px solid rgba(138, 95, 162, 0.1);
+  }
+
+  .product-card:hover {
+    transform: translateY(-5px);
+  }
+
+  /* 按鈕一致性 */
+  .btn-primary {
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    padding: 12px 24px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.3s;
+  }
+
+  .btn-primary:active {
+    opacity: 0.8;
+  }
+</style>
