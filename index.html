@@ -9,8 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <!-- Swiper CSS (CDN) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
     <style>
         :root {
@@ -19,239 +17,71 @@
             --white: #ffffff;
         }
 
-        /* 基礎設定 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
             font-family: 'Montserrat', 'Noto Sans TC', sans-serif;
-            background-color: var(--white); /* 主背景設為白色以符合參考圖 */
+            background-color: var(--white);
             color: #333;
-            line-height: 1.6;
+            overflow-x: hidden;
         }
 
-        /* --- Header --- */
+        /* --- Header (Logo 置中) --- */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 5%;
+            padding: 0 4%;
             background: var(--bg-sleet);
-            height: 100px;
+            height: 90px;
             position: sticky;
             top: 0;
             z-index: 1000;
         }
-        .header-left { display: flex; gap: 25px; flex: 1; font-size: 0.8rem; letter-spacing: 2px; color: var(--text-purple); }
+        .header-left { display: flex; gap: 20px; flex: 1; font-size: 0.75rem; letter-spacing: 1.5px; color: var(--text-purple); }
         .header-center { flex: 1; display: flex; justify-content: center; }
-        .header-center img { height: 80px; cursor: pointer; }
-        .header-right { display: flex; gap: 20px; flex: 1; justify-content: flex-end; color: var(--text-purple); font-size: 1.2rem; }
+        .header-center img { height: 70px; cursor: pointer; }
+        .header-right { display: flex; gap: 15px; flex: 1; justify-content: flex-end; color: var(--text-purple); font-size: 1rem; }
 
         /* --- Sidebar --- */
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.1); display: none; z-index: 1100; }
-        .sidebar { position: fixed; top: 0; left: -300px; width: 300px; height: 100%; background: #f9f9f9; transition: 0.4s; z-index: 1101; padding: 50px 30px; }
+        .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; transition: 0.4s; z-index: 1101; padding: 40px 25px; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         .sidebar.active { left: 0; }
-        .nav-link { display: block; margin-bottom: 25px; text-decoration: none; color: var(--text-purple); font-size: 0.9rem; text-transform: uppercase; cursor: pointer; }
+        .nav-link { display: block; margin-bottom: 20px; text-decoration: none; color: var(--text-purple); font-size: 0.8rem; text-transform: uppercase; cursor: pointer; }
 
-        /* --- 商品展示區 (三排佈局) --- */
+        /* --- 商品展示區 (4 欄縮小版) --- */
         .container {
-            max-width: 1300px;
-            margin: 60px auto;
-            padding: 0 4%;
+            max-width: 1400px;
+            margin: 50px auto;
+            padding: 0 3%;
         }
 
         .product-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 電腦版三排 */
+            grid-template-columns: repeat(4, 1fr); /* 強制四欄 */
             gap: 40px 20px;
         }
 
         .product-card {
             display: flex;
             flex-direction: column;
-            text-decoration: none;
-            color: inherit;
+            background: #fff;
         }
 
-        /* 滾動圖片容器 - 修正高度消失問題 */
-        .swiper {
+        /* --- 純 CSS 圖片滾動器 (解決消失問題) --- */
+        .image-scroller {
             width: 100%;
-            aspect-ratio: 1 / 1.1; /* 強制正方形，確保空間存在 */
-            background: #f0f0f0;
-            margin-bottom: 15px;
-            overflow: hidden;
-            position: relative;
+            aspect-ratio: 1 / 1; /* 正方形 */
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none; /* 隱藏捲軸 Firefox */
+            background: #f7f7f7;
+            margin-bottom: 12px;
+            border-radius: 2px;
         }
-        .swiper-slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
+        .image-scroller::-webkit-scrollbar { display: none; } /* 隱藏捲軸 Chrome/Safari */
 
-        /* 顏色選取點 */
-        .color-dots { display: flex; gap: 8px; margin-bottom: 12px; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #ddd; }
-
-        /* 商品文字內容 */
-        .product-info { padding: 5px 0; }
-        .product-name { font-size: 0.9rem; margin-bottom: 6px; font-weight: 400; color: #444; }
-        .product-price { font-size: 0.85rem; color: #888; margin-bottom: 15px; }
-
-        /* 按鈕組 */
-        .btn-group { display: flex; gap: 8px; }
-        .btn {
-            flex: 1; padding: 10px 0; font-size: 0.7rem; border: 1px solid var(--text-purple);
-            cursor: pointer; transition: 0.3s; background: none; color: var(--text-purple);
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        .btn:hover { background: var(--text-purple); color: #fff; }
-        .btn-buy { background: var(--text-purple); color: #fff; }
-
-        /* Toast */
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-purple); color: white; padding: 10px 25px; font-size: 0.8rem; opacity: 0; transition: 0.5s; z-index: 2000; }
-
-        /* 手機版：一排或兩排 */
-        @media (max-width: 900px) {
-            .product-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 600px) {
-            .product-grid { grid-template-columns: 1fr; }
-            header { height: 80px; }
-            .header-left span { display: none; }
-        }
-    </style>
-</head>
-<body>
-
-<header>
-    <div class="header-left">
-        <div onclick="toggleSidebar()" style="cursor:pointer;"><i class="fa-solid fa-bars-staggered"></i> SHOP</div>
-        <span onclick="showToast('INFO即將上線')">INFO</span>
-    </div>
+        .image-scroller img {
+            flex: 0 0 100%;
     
-    <div class="header-center">
-        <img src="images/S__80977927-.png" alt="Logo" onclick="location.href='index.html'">
-    </div>
-
-    <div class="header-right">
-        <i class="fa-solid fa-bag-shopping" onclick="showToast('購物袋是空的')"></i>
-        <i class="fa-solid fa-magnifying-glass"></i>
-    </div>
-</header>
-
-<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-<div class="sidebar" id="sidebar">
-    <div style="text-align: right; cursor: pointer; margin-bottom: 30px;" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
-    <a href="#" class="nav-link" style="font-weight: 600;">HOME</a>
-    <a href="#" class="nav-link">Clothing</a>
-    <a href="#" class="nav-link">Accessories</a>
-    <a href="#" class="nav-link">Contact</a>
-</div>
-
-<div class="container">
-    <div class="product-grid">
-        
-        <!-- 商品 1 -->
-        <div class="product-card">
-            <div class="swiper mySwiper">
-                <div class="swiper-wrapper">
-                    <div class="swiper-slide"><img src="images/S__81002508_0.jpg"></div>
-                    <div class="swiper-slide"><img src="images/S__81002509_0.jpg"></div>
-                </div>
-                <div class="swiper-pagination"></div>
-            </div>
-            <div class="product-info">
-                <div class="color-dots">
-                    <div class="dot" style="background: #ffb7c5;"></div>
-                    <div class="dot" style="background: #ffffff;"></div>
-                    <div class="dot" style="background: #a7c7e7;"></div>
-                </div>
-                <div class="product-name">Cyber Butterfly Necklace ( 3 colors )</div>
-                <div class="product-price">NT$ 2,580</div>
-                <div class="btn-group">
-                    <button class="btn" onclick="showToast('已加入購物車')">Add</button>
-                    <button class="btn btn-buy" onclick="showToast('前往結帳')">Buy Now</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 商品 2 -->
-        <div class="product-item">
-            <div class="swiper mySwiper">
-                <div class="swiper-wrapper">
-                    <div class="swiper-slide"><img src="images/S__81002510_0.jpg"></div>
-                    <div class="swiper-slide"><img src="images/S__81002511_0.jpg"></div>
-                </div>
-                <div class="swiper-pagination"></div>
-            </div>
-            <div class="product-info">
-                <div class="color-dots">
-                    <div class="dot" style="background: #8A5FA2;"></div>
-                    <div class="dot" style="background: #D6DADC;"></div>
-                </div>
-                <div class="product-name">MessyTT : Mesh Baby-T</div>
-                <div class="product-price">NT$ 1,280</div>
-                <div class="btn-group">
-                    <button class="btn" onclick="showToast('已加入購物車')">Add</button>
-                    <button class="btn btn-buy" onclick="showToast('前往結帳')">Buy Now</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 商品 3 (你可以複製更多) -->
-        <div class="product-card">
-            <div class="swiper mySwiper">
-                <div class="swiper-wrapper">
-                    <div class="swiper-slide"><img src="images/S__81002508_0.jpg"></div>
-                </div>
-                <div class="swiper-pagination"></div>
-            </div>
-            <div class="product-info">
-                <div class="color-dots"><div class="dot" style="background: #eee;"></div></div>
-                <div class="product-name">New Arrival Item</div>
-                <div class="product-price">NT$ 1,000</div>
-                <div class="btn-group">
-                    <button class="btn" onclick="showToast('已加入購物車')">Add</button>
-                    <button class="btn btn-buy" onclick="showToast('前往結帳')">Buy Now</button>
-                </div>
-            </div>
-        </div>
-
-    </div>
-</div>
-
-<div id="toast">操作成功</div>
-
-<!-- Swiper JS -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-<script>
-    // 側邊欄
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        const ov = document.getElementById('overlay');
-        ov.style.display = ov.style.display === 'block' ? 'none' : 'block';
-    }
-
-    // Toast
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.opacity = '1';
-        setTimeout(() => { t.style.opacity = '0'; }, 2000);
-    }
-
-    // 初始化 Swiper (確保在頁面載入後執行)
-    window.onload = function() {
-        const swipers = document.querySelectorAll('.mySwiper');
-        swipers.forEach(s => {
-            new Swiper(s, {
-                loop: true,
-                pagination: { el: s.querySelector('.swiper-pagination'), clickable: true },
-                observer: true,
-                observeParents: true,
-            });
-        });
-    };
-</script>
-
-</body>
-</html>
