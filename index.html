@@ -6,312 +6,253 @@
     <title>MessyTT&L2i | Official Store</title>
 
     <!-- Google Fonts: 標題用 Playfair Display, 內文用 Montserrat -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
-    
-    <!-- Swiper CSS (圖片滑動套件) -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:wght@500&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
+    <!-- FontAwesome 圖標 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Swiper CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
     <style>
         :root {
-            --color-sleet: #D6DADC; /* Pantone 14-4005 - 背景主色 */
-            --color-amethyst: #8A5FA2; /* Pantone 17-3628 - 文字與按鈕 */
-            --white: #ffffff;
-            --black: #2d2d2d;
+            --bg-sleet: #D6DADC; /* Pantone 14-4005 */
+            --text-amethyst: #8A5FA2; /* Pantone 17-3628 */
+            --white-trans: rgba(255, 255, 255, 0.85);
+            --sidebar-width: 320px;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background-color: var(--color-sleet);
-            color: var(--color-amethyst);
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Montserrat', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-sleet);
+            color: var(--text-amethyst);
             overflow-x: hidden;
         }
 
-        /* 導覽列 */
-        nav {
-            background: rgba(214, 218, 220, 0.8);
+        /* --- Header 頂部欄 --- */
+        header {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 20px 5%;
+            background: rgba(235, 238, 241, 0.7);
             backdrop-filter: blur(10px);
-            padding: 25px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .menu-icon { font-size: 24px; cursor: pointer; justify-self: start; }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; letter-spacing: 3px; font-weight: 500; }
+        .header-icons { justify-self: end; font-size: 20px; }
+        .header-icons i { margin-left: 20px; cursor: pointer; }
+
+        /* --- Sidebar 側邊選單 --- */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.2);
+            display: none; z-index: 1000;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0; left: -320px; width: var(--sidebar-width); height: 100%;
+            background: rgba(240, 243, 247, 0.98);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            transition: 0.4s ease;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 30px;
+        }
+
+        .sidebar.active { left: 0; }
+
+        .close-btn { align-self: flex-end; font-size: 24px; cursor: pointer; margin-bottom: 40px; opacity: 0.6; }
+
+        /* 選單項目 */
+        .nav-list { list-style: none; flex-grow: 1; }
+        .nav-item { margin-bottom: 25px; }
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-amethyst);
+            font-size: 1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+            cursor: pointer;
+            font-weight: 400;
         }
+        .nav-link.active-link { font-weight: 600; color: #b388eb; } /* HOME 的紫色漸變感 */
 
-        .logo {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.8rem;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+        /* 下拉選單 */
+        .dropdown-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: 0.3s ease;
+            padding-left: 15px;
         }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--color-amethyst);
-            margin-left: 20px;
+        .dropdown-content.show { max-height: 200px; margin-top: 15px; }
+        .sub-item {
+            padding: 8px 0;
             font-size: 0.9rem;
-            letter-spacing: 1px;
-        }
-
-        /* 品牌形象區 (Hero Section) */
-        .hero {
-            padding: 100px 5% 50px;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 3rem;
-            font-style: italic;
-            margin-bottom: 20px;
-        }
-
-        /* 商品列表 */
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
-            padding: 40px 5%;
-        }
-
-        .product-card {
-            background: var(--white);
-            padding: 15px;
-            border-radius: 0; /* 極簡風通常用直角 */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-            transition: transform 0.4s ease;
-        }
-
-        .product-card:hover {
-            transform: translateY(-10px);
-        }
-
-        /* 圖片滾動區域 */
-        .swiper {
-            width: 100%;
-            height: 400px;
-            margin-bottom: 20px;
-        }
-
-        .swiper-slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* 商品文字介紹 */
-        .product-details {
-            text-align: left;
-            padding: 10px 0;
-        }
-
-        .product-name {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-bottom: 8px;
+            opacity: 0.7;
+            text-decoration: none;
+            color: var(--text-amethyst);
             display: block;
         }
 
-        .product-price {
-            font-size: 1rem;
-            opacity: 0.8;
-            margin-bottom: 20px;
+        /* 側邊欄底部社群 */
+        .sidebar-footer {
+            border-top: 1px solid rgba(138, 95, 162, 0.1);
+            padding-top: 30px;
         }
-
-        /* 按鈕設計 */
-        .btn-action {
-            background: var(--color-amethyst);
-            color: var(--white);
-            border: none;
-            width: 100%;
-            padding: 15px;
-            cursor: pointer;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 0.9rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            transition: all 0.3s;
-        }
-
-        .btn-action:hover {
-            letter-spacing: 4px;
-            background: #734a8a;
-        }
-
-        .btn-action:active {
-            transform: scale(0.98);
-        }
-
-        /* 會員彈窗 */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            display: none;
-            justify-content: center;
+        .social-link {
+            display: flex;
             align-items: center;
-            z-index: 2000;
-            backdrop-filter: blur(5px);
+            text-decoration: none;
+            color: var(--text-amethyst);
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            opacity: 0.8;
         }
+        .social-link i { margin-right: 12px; font-size: 18px; }
 
-        .modal-content {
-            background: var(--white);
-            padding: 50px;
-            max-width: 450px;
-            width: 90%;
-            text-align: center;
-            position: relative;
-        }
+        /* --- 商品展示區 --- */
+        .product-section { padding: 40px 5%; }
+        .product-card { background: white; padding: 15px; margin-bottom: 40px; }
+        .swiper { width: 100%; height: 450px; }
+        .swiper-slide img { width: 100%; height: 100%; object-fit: cover; }
 
-        .modal-content h2 {
-            font-family: 'Playfair Display', serif;
-            margin-bottom: 20px;
-        }
-
-        .modal-content input {
-            width: 100%;
-            padding: 12px;
-            margin: 20px 0;
-            border: 1px solid #ddd;
-            outline: none;
-        }
-
-        /* 即時反饋 Toast */
+        /* 會員 Toast */
         #toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--color-amethyst);
-            color: white;
-            padding: 12px 30px;
-            border-radius: 40px;
-            font-size: 0.9rem;
-            opacity: 0;
-            transition: 0.5s;
-            z-index: 3000;
-        }
-
-        /* RWD 適應 */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2rem; }
-            .product-grid { grid-template-columns: 1fr; }
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--text-amethyst); color: white;
+            padding: 12px 30px; border-radius: 40px; font-size: 0.9rem;
+            opacity: 0; transition: 0.5s; z-index: 2000;
         }
     </style>
 </head>
 <body>
 
-<nav>
-    <div class="logo">MessyTT&L2i</div>
-    <div class="nav-links">
-        <a href="#" onclick="showModal()">會員登入</a>
-        <a href="#">購物車</a>
+<!-- Header -->
+<header>
+    <div class="menu-icon" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></div>
+    <div class="logo">MESSYTT&L2I</div>
+    <div class="header-icons">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <i class="fa-regular fa-user" onclick="showMemberPopup()"></i>
     </div>
-</nav>
+</header>
 
-<section class="hero">
-    <h1>Minimalist & Messy.</h1>
-    <p>精選質感物件，為生活注入一絲慵懶的紫。</p>
-</section>
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-<div class="product-grid">
-    <!-- 商品 1 -->
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="close-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
+    
+    <ul class="nav-list">
+        <li class="nav-item">
+            <a href="#" class="nav-link active-link">HOME</a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link">26SS</a>
+        </li>
+        <li class="nav-item">
+            <div class="nav-link" onclick="toggleDropdown('messy-drop')">
+                ALL MESSYTT <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+            </div>
+            <div class="dropdown-content" id="messy-drop">
+                <a href="#" class="sub-item">Clothing</a>
+                <a href="#" class="sub-item">Original Goods</a>
+                <a href="#" class="sub-item">Wearable Device</a>
+            </div>
+        </li>
+        <li class="nav-item">
+            <div class="nav-link" onclick="toggleDropdown('l2i-drop')">
+                ALL L2I <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+            </div>
+            <div class="dropdown-content" id="l2i-drop">
+                <a href="#" class="sub-item">Necklace</a>
+                <a href="#" class="sub-item">Ring</a>
+            </div>
+        </li>
+        <li class="nav-item" style="margin-top: 40px;">
+            <a href="#" class="nav-link" style="opacity: 0.6;">CONTACT US</a>
+        </li>
+    </ul>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+        <a href="https://instagram.com/6ttd_d" class="social-link">
+            <i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT
+        </a>
+        <a href="https://instagram.com/6tto.o" class="social-link">
+            <i class="fa-brands fa-instagram"></i> @6tto.o ・ L2i
+        </a>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="product-section">
     <div class="product-card">
         <div class="swiper mySwiper">
             <div class="swiper-wrapper">
-                <!-- 商品圖片輪播 -->
-                <div class="swiper-slide"><img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=600" alt="Product"></div>
-                <div class="swiper-slide"><img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=600" alt="Detail"></div>
+                <div class="swiper-slide"><img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600" alt="P1"></div>
+                <div class="swiper-slide"><img src="https://images.unsplash.com/photo-1539109132381-31a15b22b8ae?q=80&w=600" alt="P2"></div>
             </div>
             <div class="swiper-pagination"></div>
         </div>
-        <div class="product-details">
-            <span class="product-name">Messy 手作質感單品</span>
-            <div class="product-price">NT$ 1,680</div>
-            <button class="btn-action" onclick="addToCart()">加入購物袋</button>
-        </div>
-    </div>
-
-    <!-- 商品 2 (以此類推) -->
-    <div class="product-card">
-        <div class="swiper mySwiper">
-            <div class="swiper-wrapper">
-                <div class="swiper-slide"><img src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&q=80&w=600" alt="Product"></div>
-            </div>
-            <div class="swiper-pagination"></div>
-        </div>
-        <div class="product-details">
-            <span class="product-name">L2i 限量聯名設計款</span>
-            <div class="product-price">NT$ 2,200</div>
-            <button class="btn-action" onclick="addToCart()">加入購物袋</button>
+        <div style="padding-top: 20px; text-align: center;">
+            <p style="letter-spacing: 1px;">經典編織款</p>
+            <p style="font-size: 0.9rem; opacity: 0.7; margin: 10px 0;">NT$ 1,280</p>
+            <button onclick="showToast('商品已加入購物車')" style="background:var(--text-amethyst); color:white; border:none; padding:10px 40px; cursor:pointer; width:100%;">ADD TO BAG</button>
         </div>
     </div>
 </div>
 
-<!-- 會員彈窗 -->
-<div class="modal" id="loginModal">
-    <div class="modal-content">
-        <h2>JOIN US.</h2>
-        <p>加入會員享專屬折扣與不定期優惠</p>
-        <input type="email" id="emailInput" placeholder="Email Address">
-        <button class="btn-action" onclick="submitJoin()">立即加入</button>
-        <button style="background:none; border:none; margin-top:20px; color:#aaa; cursor:pointer;" onclick="hideModal()">關閉</button>
-    </div>
-</div>
+<div id="toast">已成功送出</div>
 
-<div id="toast">已成功加入購物袋</div>
-
-<!-- Swiper JS -->
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
 <script>
-    // 初始化 Swiper 圖片輪播
+    // 初始化輪播
     const swiper = new Swiper('.mySwiper', {
         loop: true,
-        pagination: {
-            el: '.swiper-pagination',
-            clickable: true,
-        },
+        pagination: { el: '.swiper-pagination', clickable: true },
     });
 
-    // 會員彈窗功能
-    function showModal() {
-        document.getElementById('loginModal').style.display = 'flex';
+    // 側邊欄開關
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        sidebar.classList.toggle('active');
+        overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
     }
 
-    function hideModal() {
-        document.getElementById('loginModal').style.display = 'none';
+    // 下拉選單開關
+    function toggleDropdown(id) {
+        const drop = document.getElementById(id);
+        drop.classList.toggle('show');
+        // 旋轉箭頭小動畫 (選配)
+        const icon = event.currentTarget.querySelector('.fa-chevron-down');
+        icon.style.transform = drop.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+        icon.style.transition = '0.3s';
     }
 
-    function submitJoin() {
-        const email = document.getElementById('emailInput').value;
-        if(email) {
-            hideModal();
-            showToast("歡迎加入 MessyTT&L2i！優惠碼已寄出");
-        }
-    }
-
-    // 加入購物車反應
-    function addToCart() {
-        showToast("已成功加入購物袋");
-    }
-
-    // 顯示即時反饋 (Toast)
-    function showToast(text) {
+    // 提示訊息
+    function showToast(msg) {
         const toast = document.getElementById('toast');
-        toast.innerText = text;
+        toast.innerText = msg;
         toast.style.opacity = '1';
-        setTimeout(() => {
-            toast.style.opacity = '0';
-        }, 2500);
+        setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+    }
+    
+    function showMemberPopup() {
+        showToast("會員功能即將上線");
     }
 </script>
 
