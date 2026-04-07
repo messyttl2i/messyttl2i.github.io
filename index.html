@@ -7,7 +7,7 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:wght@500&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
-    <!-- FontAwesome 圖標 -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
     <style>
@@ -19,117 +19,73 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-            font-family: 'Montserrat', 'Noto Sans TC', sans-serif;
-            background-color: var(--white);
-            color: var(--text-amethyst);
-            overflow-x: hidden;
-        }
+        body { font-family: 'Montserrat', 'Noto Sans TC', sans-serif; background: var(--white); color: var(--text-amethyst); overflow-x: hidden; }
 
-        /* --- Header 頂部欄 (左選單、中 Logo、右功能) --- */
-        header {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            padding: 0 4%;
-            background: var(--bg-sleet);
-            height: 100px;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
+        /* --- Header --- */
+        header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 4%; background: var(--bg-sleet); height: 100px; position: sticky; top: 0; z-index: 1000; }
         .header-left { display: flex; gap: 20px; align-items: center; cursor: pointer; letter-spacing: 2px; font-size: 0.8rem; }
         .header-center img { height: 80px; cursor: pointer; }
-        .header-right { display: flex; gap: 20px; justify-content: flex-end; font-size: 1.1rem; }
+        .header-right { display: flex; gap: 20px; justify-content: flex-end; font-size: 1.1rem; align-items: center; }
+        .cart-icon-wrapper { position: relative; cursor: pointer; }
+        .cart-count { position: absolute; top: -8px; right: -8px; background: var(--text-amethyst); color: #fff; font-size: 0.65rem; padding: 2px 5px; border-radius: 50%; }
 
-        /* --- Sidebar 側邊選單 (嚴格依照您的截圖與需求) --- */
-        .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.15); display: none; z-index: 1100;
-        }
+        /* --- Sidebar & Cart Drawer --- */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); display: none; z-index: 1100; }
+        .panel { position: fixed; top: 0; height: 100%; background: rgba(240, 243, 247, 0.98); transition: 0.4s; z-index: 1101; padding: 40px 25px; display: flex; flex-direction: column; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        .sidebar { left: -320px; width: var(--sidebar-width); }
+        .cart-drawer { right: -350px; width: 350px; }
+        .panel.active { left: 0; }
+        .cart-drawer.active { right: 0; }
+        
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; font-family: 'Playfair Display', serif; letter-spacing: 1px; }
 
-        .sidebar {
-            position: fixed; top: 0; left: -320px; width: var(--sidebar-width); height: 100%;
-            background: rgba(240, 243, 247, 0.98);
-            transition: 0.4s ease; z-index: 1101;
-            padding: 40px 30px; display: flex; flex-direction: column;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-        }
-
-        .sidebar.active { left: 0; }
-        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 50px; }
-        .sidebar-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; letter-spacing: 2px; }
-
+        /* Sidebar 導覽內容 (嚴格保留) */
         .nav-list { list-style: none; flex-grow: 1; }
         .nav-item { margin-bottom: 25px; }
-        .nav-link {
-            text-decoration: none; color: var(--text-amethyst);
-            font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase;
-            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
-        }
+        .nav-link { text-decoration: none; color: var(--text-amethyst); font-size: 0.9rem; text-transform: uppercase; cursor: pointer; display: flex; justify-content: space-between; }
+        .dropdown { padding-left: 15px; display: none; margin-top: 15px; }
+        .dropdown.show { display: block; }
+        .social-link { display: flex; align-items: center; text-decoration: none; color: var(--text-amethyst); font-size: 0.8rem; margin-top: 15px; }
 
-        /* 下拉選單樣式 */
-        .dropdown-content { max-height: 0; overflow: hidden; transition: 0.3s ease; padding-left: 10px; }
-        .dropdown-content.show { max-height: 250px; margin-top: 15px; }
-        .sub-item { display: block; padding: 8px 0; color: var(--text-amethyst); opacity: 0.7; text-decoration: none; font-size: 0.8rem; }
+        /* --- 購物車內部清單 --- */
+        .cart-items { flex-grow: 1; overflow-y: auto; }
+        .cart-item { display: flex; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid rgba(138, 95, 162, 0.1); padding-bottom: 15px; }
+        .cart-item img { width: 70px; height: 70px; object-fit: cover; }
+        .cart-item-info { flex-grow: 1; font-size: 0.75rem; }
+        .cart-item-name { font-weight: 600; margin-bottom: 4px; }
+        .cart-footer { border-top: 2px solid var(--text-amethyst); padding-top: 20px; }
+        .cart-total { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: 600; }
 
-        /* 側邊欄底部社群 (Instagram) */
-        .sidebar-footer { border-top: 1px solid rgba(138, 95, 162, 0.1); padding-top: 30px; }
-        .social-link { display: flex; align-items: center; text-decoration: none; color: var(--text-amethyst); font-size: 0.8rem; margin-bottom: 15px; opacity: 0.8; }
-        .social-link i { margin-right: 12px; font-size: 1.1rem; }
-
-        /* --- 商品展示區 (精緻 4 欄佈局) --- */
+        /* --- 商品展示區 --- */
         .main-container { max-width: 1400px; margin: 50px auto; padding: 0 4%; }
-        .product-grid { display: grid; grid-template-columns: repeat(2, 4fr); gap: 50px 20px; }
-
-        .product-card { display: flex; flex-direction: column; width: 100%; }
-
-        /* 穩定圖片展示器 (解決消失問題) */
-        .image-box {
-            width: 100%; aspect-ratio: 1 / 1; background: #f5f5f5;
-            margin-bottom: 15px; overflow-x: auto; display: flex;
-            scroll-snap-type: x mandatory; scrollbar-width: none; border-radius: 2px;
-        }
+        .product-grid { display: grid; grid-template-columns: repeat(2, 4fr); gap: 40px 20px; }
+        
+        /* 圖片滾動器 */
+        .image-box { width: 100%; aspect-ratio: 1/1; background: #f5f5f5; margin-bottom: 12px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; border-radius: 2px; }
         .image-box::-webkit-scrollbar { display: none; }
         .image-box img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
 
-        /* 商品文字資訊 (縮小精緻版) */
-        .product-info { text-align: left; }
-        .product-name { font-size: 0.75rem; font-weight: 500; margin-bottom: 5px; color: #333; letter-spacing: 0.5px; }
-        .product-desc { font-size: 0.7rem; opacity: 0.6; margin-bottom: 10px; line-height: 1.4; min-height: 2.8em; overflow: hidden; }
-        .product-price { font-size: 0.8rem; color: #666; margin-bottom: 15px; font-weight: 500; }
+        /* 尺寸選擇器 */
+        .size-select { width: 100%; padding: 5px; font-size: 0.7rem; color: var(--text-amethyst); border: 1px solid rgba(138, 95, 162, 0.2); background: none; margin-bottom: 10px; cursor: pointer; outline: none; }
 
-        /* 按鈕組 */
-        .btn-group { display: flex; gap: 5px; }
-        .btn {
-            flex: 1; padding: 8px 0; font-size: 0.6rem; border: 1px solid var(--text-amethyst);
-            cursor: pointer; transition: 0.3s; background: none; color: var(--text-amethyst);
-            text-transform: uppercase; letter-spacing: 1px;
-        }
+        .product-name { font-size: 0.75rem; font-weight: 500; margin-bottom: 5px; color: #333; }
+        .product-price { font-size: 0.8rem; color: #666; margin-bottom: 12px; font-weight: 500; }
+
+        /* 按鈕風格 */
+        .btn { width: 100%; padding: 10px 0; font-size: 0.65rem; border: 1px solid var(--text-amethyst); cursor: pointer; background: none; color: var(--text-amethyst); text-transform: uppercase; margin-top: 5px; transition: 0.3s; }
         .btn:hover { background: var(--text-amethyst); color: #fff; }
         .btn-buy { background: var(--text-amethyst); color: #fff; }
 
-        /* Toast 反饋 */
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 10px 25px; font-size: 0.75rem; opacity: 0; transition: 0.5s; z-index: 2000; border-radius: 2px; pointer-events: none; }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 10px 25px; font-size: 0.75rem; opacity: 0; transition: 0.5s; z-index: 2000; }
 
-        /* RWD 響應式 */
-        @media (max-width: 1100px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 800px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 500px) { 
-            .product-grid { grid-template-columns: 1fr; } 
-            header { height: 80px; }
-            .header-left span { display: none; }
-            .header-center img { height: 60px; }
-        }
+        @media (max-width: 900px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
 <body>
 
 <!-- Header -->
 <header>
-    <div class="header-left" onclick="toggleSidebar()">
+    <div class="header-left" onclick="togglePanel('sidebar')">
         <i class="fa-solid fa-bars-staggered"></i> <span>SHOP</span>
     </div>
     <div class="header-center">
@@ -137,162 +93,178 @@
     </div>
     <div class="header-right">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <i class="fa-solid fa-bag-shopping" onclick="showToast('購物袋是空的')"></i>
+        <div class="cart-icon-wrapper" onclick="togglePanel('cart-drawer')">
+            <i class="fa-solid fa-bag-shopping"></i>
+            <span class="cart-count" id="cartCount">0</span>
+        </div>
     </div>
 </header>
 
-<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="overlay" id="overlay" onclick="closeAllPanels()"></div>
 
-<!-- Sidebar (完全恢復您的核心設定) -->
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-title">MESSYTT&L2I</div>
-        <i class="fa-solid fa-xmark" style="cursor:pointer; font-size: 1.2rem; opacity: 0.5;" onclick="toggleSidebar()"></i>
-    </div>
-    
+<!-- Sidebar (您的原本設定) -->
+<div class="panel sidebar" id="sidebar">
+    <div class="panel-header"><div>MESSYTT&L2I</div><i class="fa-solid fa-xmark" onclick="closeAllPanels()"></i></div>
     <ul class="nav-list">
+        <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a></li>
+        <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
         <li class="nav-item">
-            <a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a>
-        </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link">26SS</a>
-        </li>
-        <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('messy-drop')">
-                ALL MESSYTT <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
-            </div>
-            <div id="messy-drop" class="dropdown-content">
-                <a href="#" class="sub-item">Clothing</a>
-                <a href="#" class="sub-item">Original Goods</a>
-                <a href="#" class="sub-item">Wearable device</a>
-            </div>
+            <div class="nav-link" onclick="document.getElementById('m-drop').classList.toggle('show')">ALL MESSYTT <i class="fa-solid fa-chevron-down"></i></div>
+            <div id="m-drop" class="dropdown"><a href="#" class="sub-item">Clothing</a><a href="#" class="sub-item">Original Goods</a><a href="#" class="sub-item">Wearable device</a></div>
         </li>
         <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('l2i-drop')">
-                ALL L2I <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
-            </div>
-            <div id="l2i-drop" class="dropdown-content">
-                <a href="#" class="sub-item">Necklace</a>
-                <a href="#" class="sub-item">Ring</a>
-            </div>
+            <div class="nav-link" onclick="document.getElementById('l-drop').classList.toggle('show')">ALL L2I <i class="fa-solid fa-chevron-down"></i></div>
+            <div id="l-drop" class="dropdown"><a href="#" class="sub-item">Necklace</a><a href="#" class="sub-item">Ring</a></div>
         </li>
-        <li class="nav-item" style="margin-top: 30px;">
-            <a href="#" class="nav-link" style="opacity: 0.6;">CONTACT US</a>
-        </li>
+        <li class="nav-item" style="margin-top: 30px;"><a href="#" class="nav-link" style="opacity:0.6;">CONTACT US</a></li>
     </ul>
-
-    <!-- 側邊欄底部社群 -->
     <div class="sidebar-footer">
-        <a href="https://instagram.com/6ttd_d" class="social-link" target="_blank">
-            <i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT
-        </a>
-        <a href="https://instagram.com/6tto.o" class="social-link" target="_blank">
-            <i class="fa-brands fa-instagram"></i> @6tto.o ・ L2i
-        </a>
+        <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT</a>
+        <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i> @6tto.o ・ L2i</a>
     </div>
 </div>
 
-<!-- 商品主區域 -->
+<!-- 購物車 Drawer -->
+<div class="panel cart-drawer" id="cart-drawer">
+    <div class="panel-header"><div>YOUR BAG</div><i class="fa-solid fa-xmark" onclick="closeAllPanels()"></i></div>
+    <div class="cart-items" id="cartItemsList">
+        <!-- 購物車清單由 JS 渲染 -->
+    </div>
+    <div class="cart-footer">
+        <div class="cart-total"><span>TOTAL</span><span id="cartTotalPrice">NT$ 0</span></div>
+        <button class="btn btn-buy" onclick="showToast('即將前往綠界結帳...')">CHECKOUT</button>
+    </div>
+</div>
+
+<!-- 商品區域 -->
 <div class="main-container">
     <div class="product-grid">
-        
-        <!-- 商品範例 1 -->
+        <!-- 商品 1 -->
         <div class="product-card">
-            <div class="image-box">
-                <img src="images/S__81002508_0.jpg" alt="P1-1">
-                <img src="images/S__81002509_0.jpg" alt="P1-2">
-                <img src="images/S__81002510_0.jpg" alt="P1-1">
-                <img src="images/S__81002511_0.jpg" alt="P1-1">
+            <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)">
+                <img src="images/S__81002508_0.jpg">
+                <img src="images/S__81002509_0.jpg">
             </div>
             <div class="product-info">
-                <div class="product-name">GuHUa股花</div>
-                <div class="product-desc">hand-made print set。</div>
-                <div class="product-price">NT$ 1,890</div>
+                <div class="product-name">Cyber Butterfly Necklace</div>
+                <div class="product-price">NT$ 2,580</div>
+                <select class="size-select" id="size-1">
+                    <option value="One Size">One Size</option>
+                </select>
                 <div class="btn-group">
-                    <button class="btn" onclick="showToast('已加入購物車')">Add</button>
-                    <button class="btn btn-buy" onclick="showToast('前往結帳頁面')">Buy Now</button>
+                    <button class="btn" onclick="addToCart('1', 'Butterfly Necklace', 2580, 'images/S__81002508_0.jpg', 'size-1')">Add to Bag</button>
                 </div>
             </div>
         </div>
 
-        <!-- 商品範例 2 -->
+        <!-- 商品 2 -->
         <div class="product-card">
-            <div class="image-box">
-                <img src="images/S__81002510_0.jpg" alt="P2-1">
-                <img src="images/S__81002511_0.jpg" alt="P2-2">
+            <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)">
+                <img src="images/S__81002510_0.jpg">
+                <img src="images/S__81002511_0.jpg">
             </div>
             <div class="product-info">
                 <div class="product-name">Mesh Panel Baby-T</div>
-                <div class="product-desc">修身剪裁透膚網紗材質，慵懶風格必備。</div>
                 <div class="product-price">NT$ 1,280</div>
-                <div class="btn-group">
-                    <button class="btn" onclick="showToast('已加入購物車')">Add</button>
-                    <button class="btn btn-buy" onclick="showToast('前往結帳頁面')">Buy Now</button>
-                </div>
+                <select class="size-select" id="size-2">
+                    <option value="S">S</option><option value="M">M</option><option value="L">L</option>
+                </select>
+                <button class="btn" onclick="addToCart('2', 'Mesh Baby-T', 1280, 'images/S__81002510_0.jpg', 'size-2')">Add to Bag</button>
             </div>
         </div>
-
-        <!-- 商品範例 3 -->
-        <div class="product-card">
-            <div class="image-box">
-                <img src="images/S__81002508_0.jpg" alt="P3-1">
-            </div>
-            <div class="product-info">
-                <div class="product-name">Original Object</div>
-                <div class="product-desc">MessyTT 品牌專屬手工物件。</div>
-                <div class="product-price">NT$ 880</div>
-                <div class="btn-group">
-                    <button class="btn" onclick="showToast('已加入購物車')">Add</button>
-                    <button class="btn btn-buy" onclick="showToast('前往結帳頁面')">Buy Now</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 商品範例 4 -->
-        <div class="product-card">
-            <div class="image-box">
-                <img src="images/S__81002511_0.jpg" alt="P4-1">
-            </div>
-            <div class="product-info">
-                <div class="product-name">Future Ring No.01</div>
-                <div class="product-desc">L2i 限量極簡未來感戒指。</div>
-                <div class="product-price">NT$ 1,080</div>
-                <div class="btn-group">
-                    <button class="btn" onclick="showToast('已加入購物車')">Add</button>
-                    <button class="btn btn-buy" onclick="showToast('前往結帳頁面')">Buy Now</button>
-                </div>
-            </div>
-        </div>
-
     </div>
 </div>
 
 <div id="toast">操作成功</div>
 
 <script>
-    // 側邊欄控制
-    function toggleSidebar() {
-        const sb = document.getElementById('sidebar');
-        const ov = document.getElementById('overlay');
-        sb.classList.toggle('active');
-        ov.style.display = (sb.classList.contains('active')) ? 'block' : 'none';
+    // --- 購物車數據 ---
+    let cart = [];
+
+    // --- 側邊欄與購物車控制 ---
+    function togglePanel(id) {
+        closeAllPanels();
+        document.getElementById(id).classList.add('active');
+        document.getElementById('overlay').style.display = 'block';
     }
 
-    // 下拉選單控制
-    function toggleDropdown(id) {
-        const drop = document.getElementById(id);
-        drop.classList.toggle('show');
-        // 箭頭旋轉 (選配)
-        const icon = event.currentTarget.querySelector('.fa-chevron-down');
-        if(icon) icon.style.transform = drop.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+    function closeAllPanels() {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('overlay').style.display = 'none';
     }
 
-    // Toast 反饋
+    // --- 核心功能：滑鼠移入自動輪播修正版 ---
+    let autoplayInterval;
+    function startAutoplay(element) {
+        autoplayInterval = setInterval(() => {
+            const scrollWidth = element.offsetWidth;
+            if (element.scrollLeft + scrollWidth >= element.scrollWidth) {
+                element.scrollLeft = 0;
+            } else {
+                element.scrollLeft += scrollWidth;
+            }
+        }, 1200);
+    }
+    function stopAutoplay(element) {
+        clearInterval(autoplayInterval);
+        element.scrollLeft = 0;
+    }
+
+    // --- 購物車邏輯 ---
+    function addToCart(id, name, price, img, sizeId) {
+        const size = document.getElementById(sizeId).value;
+        const existing = cart.find(item => item.id === id && item.size === size);
+
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            cart.push({ id, name, price, img, size, qty: 1 });
+        }
+        
+        updateCartUI();
+        showToast(`已將 ${name} 加入購物車`);
+        togglePanel('cart-drawer');
+    }
+
+    function updateCartUI() {
+        const list = document.getElementById('cartItemsList');
+        const count = document.getElementById('cartCount');
+        const total = document.getElementById('cartTotalPrice');
+        
+        list.innerHTML = '';
+        let totalPrice = 0;
+        let totalCount = 0;
+
+        cart.forEach((item, index) => {
+            totalPrice += item.price * item.qty;
+            totalCount += item.qty;
+            list.innerHTML += `
+                <div class="cart-item">
+                    <img src="${item.img}">
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div style="opacity:0.6">Size: ${item.size}</div>
+                        <div style="margin:5px 0">Qty: ${item.qty}</div>
+                        <div style="font-weight:600">NT$ ${item.price.toLocaleString()}</div>
+                        <div style="color:red; cursor:pointer; font-size:0.6rem; margin-top:5px" onclick="removeFromCart(${index})">REMOVE</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        count.innerText = totalCount;
+        total.innerText = `NT$ ${totalPrice.toLocaleString()}`;
+    }
+
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCartUI();
+    }
+
     function showToast(msg) {
         const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.style.opacity = '1';
-        setTimeout(() => { t.style.opacity = '0'; }, 2000);
+        t.innerText = msg; t.style.opacity = '1';
+        setTimeout(() => { t.style.opacity = '0'; }, 2500);
     }
 </script>
 
