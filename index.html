@@ -144,30 +144,45 @@
     <p style="text-align:center; font-size:0.6rem; margin-top:15px; cursor:pointer; text-decoration:underline;" onclick="closeAll()">返回首頁</p>
 </div>
 
-<!-- Sidebar (原有目錄) -->
-<div class="panel sidebar" id="sidebar">
-    <div class="panel-header"><div>MESSYTT&L2I</div><i class="fa-solid fa-xmark" onclick="closeAll()"></i></div>
+<!-- Sidebar (完全恢復您的核心設定) -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-title">MESSYTT&L2I</div>
+        <i class="fa-solid fa-xmark" style="cursor:pointer; font-size: 1.2rem; opacity: 0.5;" onclick="toggleSidebar()"></i>
+    </div>
+    
     <ul class="nav-list">
-        <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a></li>
-        <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
         <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('m-drop')">ALL MESSYTT <i class="fa-solid fa-chevron-down"></i></div>
-            <div id="m-drop" class="dropdown">
-                <a href="#" class="sub-item">CLOTHING</a>
-                <a href="#" class="sub-item">ORIGINAL GOODS</a>
-                <a href="#" class="sub-item">WEARABLE DEVICE</a>
+            <a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link">26SS</a>
+        </li>
+        <li class="nav-item">
+            <div class="nav-link" onclick="toggleDropdown('messy-drop')">
+                ALL MESSYTT <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+            </div>
+            <div id="messy-drop" class="dropdown-content">
+                <a href="#" class="sub-item">Clothing</a>
+                <a href="#" class="sub-item">Original Goods</a>
+                <a href="#" class="sub-item">Wearable device</a>
             </div>
         </li>
         <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('l-drop')">ALL L2I <i class="fa-solid fa-chevron-down"></i></div>
-            <div id="l-drop" class="dropdown">
-                <a href="#" class="sub-item">NECKLACE</a>
-                <a href="#" class="sub-item">RING</a>
+            <div class="nav-link" onclick="toggleDropdown('l2i-drop')">
+                ALL L2I <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+            </div>
+            <div id="l2i-drop" class="dropdown-content">
+                <a href="#" class="sub-item">Necklace</a>
+                <a href="#" class="sub-item">Ring</a>
             </div>
         </li>
-        <li class="nav-item" style="margin-top: 30px;"><a href="#" class="nav-link" style="opacity:0.6;">CONTACT US</a></li>
+        <li class="nav-item" style="margin-top: 30px;">
+            <a href="#" class="nav-link" style="opacity: 0.6;">CONTACT US</a>
+        </li>
     </ul>
-   <!-- 側邊欄底部社群 -->
+
+    <!-- 側邊欄底部社群 -->
     <div class="sidebar-footer">
         <a href="https://instagram.com/6ttd_d" class="social-link" target="_blank">
             <i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT
@@ -244,7 +259,7 @@
 
         // 這裡模擬發送信件 (實際運行需註冊 EmailJS 取得 ServiceID/TemplateID)
         /*
-        emailjs.send("service_id", "template_id", {
+        emailjs.send("service_pzf7lvt", "template_lsph3zp", {
             to_name: name,
             to_email: email,
             message: "恭喜您成為 MESSYTT&L2I 的新會員！獲得 30 入會購物金。"
