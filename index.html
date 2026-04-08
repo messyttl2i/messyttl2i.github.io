@@ -7,7 +7,6 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:wght@500&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
     <style>
@@ -28,10 +27,10 @@
         .header-center img { height: 80px; cursor: pointer; }
         .header-right { display: flex; gap: 20px; justify-content: flex-end; font-size: 1.1rem; align-items: center; }
         
-        .icon-btn { cursor: pointer; position: relative; transition: 0.3s; }
+        .icon-btn { cursor: pointer; position: relative; }
         .cart-count { position: absolute; top: -8px; right: -8px; background: var(--text-amethyst); color: #fff; font-size: 0.65rem; padding: 2px 5px; border-radius: 50%; }
 
-        /* --- 面板系統 (側邊欄、購物車) --- */
+        /* --- 面板系統 --- */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); display: none; z-index: 1100; backdrop-filter: blur(2px); }
         .panel { position: fixed; top: 0; height: 100%; background: rgba(240, 243, 247, 0.98); transition: 0.4s ease; z-index: 1101; padding: 40px 25px; display: flex; flex-direction: column; }
         .sidebar { left: -320px; width: var(--sidebar-width); }
@@ -39,42 +38,27 @@
         .panel.active { left: 0; }
         .cart-drawer.active { right: 0; }
         
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-family: 'Playfair Display', serif; letter-spacing: 1px; font-size: 1.2rem; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-family: 'Playfair Display', serif; font-size: 1.2rem; }
 
-        /* --- 會員制度系統 (依截圖開發) --- */
+        /* --- 會員制度註冊 (依截圖) --- */
         .member-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 30px; z-index: 1200; display: none; width: 95%; max-width: 450px; height: 85vh; overflow-y: auto; box-shadow: 0 15px 40px rgba(0,0,0,0.15); }
-        .member-modal h3 { font-size: 1rem; margin-bottom: 20px; text-align: center; border-bottom: 1px solid var(--bg-sleet); padding-bottom: 15px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 0.75rem; margin-bottom: 5px; opacity: 0.8; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: none; border-bottom: 1px solid var(--bg-sleet); outline: none; font-family: inherit; color: var(--text-amethyst); }
-        .birthday-group { display: flex; gap: 10px; }
         
-        /* --- 側邊欄目錄 (保留原有階層) --- */
-        .nav-list { list-style: none; flex-grow: 1; }
-        .nav-item { margin-bottom: 22px; }
-        .nav-link { text-decoration: none; color: var(--text-amethyst); font-size: 0.85rem; text-transform: uppercase; cursor: pointer; display: flex; justify-content: space-between; letter-spacing: 1.5px; }
-        .dropdown { padding-left: 15px; display: none; margin-top: 10px; }
-        .dropdown.show { display: block; }
-        .sub-item { display: block; padding: 6px 0; color: var(--text-amethyst); opacity: 0.7; text-decoration: none; font-size: 0.75rem; }
-
         /* --- 商品展示區 (4 欄) --- */
         .main-container { max-width: 1400px; margin: 50px auto; padding: 0 4%; }
         .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 45px 18px; }
         .image-box { width: 100%; aspect-ratio: 1/1; background: #f5f5f5; margin-bottom: 10px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; cursor: pointer; }
-        .image-box::-webkit-scrollbar { display: none; }
         .image-box img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
+        .image-box::-webkit-scrollbar { display: none; }
 
-        /* 購物車內部 */
-        .cart-items { flex-grow: 1; overflow-y: auto; }
-        .cart-item { display: flex; gap: 12px; margin-bottom: 15px; border-bottom: 1px solid rgba(138, 95, 162, 0.1); padding-bottom: 10px; }
-        .cart-item img { width: 60px; height: 60px; object-fit: cover; }
-
-        /* 按鈕風格 (保持一致) */
+        /* 按鈕風格 */
         .btn { width: 100%; padding: 12px 0; font-size: 0.7rem; border: 1px solid var(--text-amethyst); cursor: pointer; background: none; color: var(--text-amethyst); text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
         .btn:hover { background: var(--text-amethyst); color: #fff; }
         .btn-full { background: var(--text-amethyst); color: #fff; }
 
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 12px 25px; font-size: 0.75rem; opacity: 0; transition: 0.5s; z-index: 3000; border-radius: 2px; pointer-events: none; }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 12px 25px; font-size: 0.75rem; opacity: 0; transition: 0.5s; z-index: 3000; pointer-events: none; border-radius: 2px; }
 
         @media (max-width: 1000px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
@@ -90,7 +74,7 @@
     </div>
     <div class="header-right">
         <i class="fa-regular fa-user icon-btn" onclick="openMemberModal()"></i>
-        <div class="icon-btn cart-icon-wrapper" onclick="togglePanel('cart-drawer')">
+        <div class="icon-btn" onclick="togglePanel('cart-drawer')">
             <i class="fa-solid fa-bag-shopping"></i>
             <span class="cart-count" id="cartCount">0</span>
         </div>
@@ -99,110 +83,55 @@
 
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-<!-- 會員制度註冊彈窗 (依截圖製作) -->
+<!-- 會員註冊彈窗 -->
 <div class="member-modal" id="memberModal">
-    <h3>請輸入你的個人資料，以完成註冊流程！</h3>
-    
-    <div class="form-group">
-        <label>用戶名</label>
-        <input type="text" id="reg_name" placeholder="您的姓名">
-    </div>
-    <div class="form-group">
-        <label>密碼</label>
-        <input type="password" id="reg_pw" placeholder="••••••••">
-    </div>
-    <div class="form-group">
-        <label>性別</label>
-        <select id="reg_gender">
-            <option value="女">女</option>
-            <option value="男">男</option>
-            <option value="其他">其他</option>
-        </select>
-    </div>
+    <h3 style="text-align:center; margin-bottom:20px;">請輸入你的個人資料，以完成註冊流程！</h3>
+    <div class="form-group"><label>用戶名</label><input type="text" id="reg_name" placeholder="賴韻文"></div>
+    <div class="form-group"><label>密碼</label><input type="password" id="reg_pw" placeholder="••••••••"></div>
+    <div class="form-group"><label>性別</label><select id="reg_gender"><option>女</option><option>男</option></select></div>
     <div class="form-group">
         <label>生日日期</label>
-        <div class="birthday-group">
+        <div style="display:flex; gap:10px;">
             <input type="number" id="reg_yy" placeholder="年">
             <input type="number" id="reg_mm" placeholder="月">
             <input type="number" id="reg_dd" placeholder="日">
         </div>
     </div>
-    <div class="form-group">
-        <label>聯絡電話</label>
-        <input type="tel" id="reg_phone" placeholder="09XX-XXX-XXX">
-    </div>
-    <div class="form-group">
-        <label>地址</label>
-        <input type="text" id="reg_address" placeholder="您的寄送地址">
-    </div>
-    <div class="form-group">
-        <label>電子郵件 (發送回饋信用)</label>
-        <input type="email" id="reg_email" placeholder="dream0122230@gmail.com">
-    </div>
+    <div class="form-group"><label>聯絡電話</label><input type="tel" id="reg_phone" placeholder="聯絡電話是必須的"></div>
+    <div class="form-group"><label>地址</label><input type="text" id="reg_address" placeholder="地址是必須的"></div>
+    <div class="form-group"><label>電子郵件 (Email)</label><input type="email" id="reg_email" placeholder="dream0122230@gmail.com"></div>
     
-    <button class="btn btn-full" onclick="handleRegister()">立即加入！</button>
-    <p style="text-align:center; font-size:0.6rem; margin-top:15px; cursor:pointer; text-decoration:underline;" onclick="closeAll()">返回首頁</p>
+    <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
 </div>
 
-<!-- Sidebar (完全恢復您的核心設定) -->
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-title">MESSYTT&L2I</div>
-        <i class="fa-solid fa-xmark" style="cursor:pointer; font-size: 1.2rem; opacity: 0.5;" onclick="toggleSidebar()"></i>
-    </div>
-    
+<!-- Sidebar 側邊欄 (保留您的目錄) -->
+<div class="panel sidebar" id="sidebar">
+    <div class="panel-header"><div>MESSYTT&L2I</div><i class="fa-solid fa-xmark" onclick="closeAll()"></i></div>
     <ul class="nav-list">
+        <li class="nav-item"><a href="#" class="nav-link" style="color:#b388eb; font-weight:600;">HOME</a></li>
+        <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
         <li class="nav-item">
-            <a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a>
+            <div class="nav-link" onclick="toggleDropdown('m-drop')">ALL MESSYTT <i class="fa-solid fa-chevron-down"></i></div>
+            <div id="m-drop" class="dropdown"><a href="#" class="sub-item">CLOTHING</a><a href="#" class="sub-item">ORIGINAL GOODS</a></div>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link">26SS</a>
-        </li>
-        <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('messy-drop')">
-                ALL MESSYTT <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
-            </div>
-            <div id="messy-drop" class="dropdown-content">
-                <a href="#" class="sub-item">Clothing</a>
-                <a href="#" class="sub-item">Original Goods</a>
-                <a href="#" class="sub-item">Wearable device</a>
-            </div>
-        </li>
-        <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('l2i-drop')">
-                ALL L2I <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
-            </div>
-            <div id="l2i-drop" class="dropdown-content">
-                <a href="#" class="sub-item">Necklace</a>
-                <a href="#" class="sub-item">Ring</a>
-            </div>
-        </li>
-        <li class="nav-item" style="margin-top: 30px;">
-            <a href="#" class="nav-link" style="opacity: 0.6;">CONTACT US</a>
+            <div class="nav-link" onclick="toggleDropdown('l-drop')">ALL L2I <i class="fa-solid fa-chevron-down"></i></div>
+            <div id="l-drop" class="dropdown"><a href="#" class="sub-item">NECKLACE</a><a href="#" class="sub-item">RING</a></div>
         </li>
     </ul>
-
-    <!-- 側邊欄底部社群 -->
-    <div class="sidebar-footer">
-        <a href="https://instagram.com/6ttd_d" class="social-link" target="_blank">
-            <i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT
-        </a>
-        <a href="https://instagram.com/6tto.o" class="social-link" target="_blank">
-            <i class="fa-brands fa-instagram"></i> @6tto.o ・ L2i
-        </a>
-    </div>
 </div>
+
 <!-- 購物車 Drawer -->
 <div class="panel cart-drawer" id="cart-drawer">
     <div class="panel-header"><div>YOUR BAG</div><i class="fa-solid fa-xmark" onclick="closeAll()"></i></div>
     <div class="cart-items" id="cartItemsList"></div>
     <div class="cart-footer">
         <div class="cart-total"><span>TOTAL</span><span id="cartTotalPrice">NT$ 0</span></div>
-        <button class="btn btn-full" onclick="showToast('前往綠界結帳系統...')">CHECKOUT</button>
+        <button class="btn btn-full" onclick="showToast('前往綠界付款...')">CHECKOUT</button>
     </div>
 </div>
 
-<!-- 商品主區域 (範例) -->
+<!-- 商品範例 -->
 <div class="main-container">
     <div class="product-grid">
         <div class="product-card">
@@ -216,11 +145,14 @@
                 <button class="btn" onclick="addToCart('1', 'Butterfly Necklace', 2580, 'images/S__81002508_0.jpg', 'size-1')">Add to Bag</button>
             </div>
         </div>
-        <!-- 其他商品比照辦理 -->
     </div>
 </div>
 
-<div id="toast">已成功操作</div>
+<div id="toast">操作成功</div>
+
+<!-- 引入 EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
 <script>
     // 1. 初始化 EmailJS - 請在此處填入您的 Public Key
     (function(){
