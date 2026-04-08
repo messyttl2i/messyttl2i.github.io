@@ -103,27 +103,26 @@
 <div class="overlay" id="overlay" onclick="closeAllPanels()"></div>
 
 <!-- Sidebar (您的原本設定) -->
-<div class="panel sidebar" id="sidebar">
-    <div class="panel-header"><div>MESSYTT&L2I</div><i class="fa-solid fa-xmark" onclick="closeAllPanels()"></i></div>
-    <ul class="nav-list">
-        <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a></li>
-        <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
-        <li class="nav-item">
-            <div class="nav-link" onclick="document.getElementById('m-drop').classList.toggle('show')">ALL MESSYTT <i class="fa-solid fa-chevron-down"></i></div>
-            <div id="m-drop" class="dropdown"><a href="#" class="sub-item">Clothing</a><a href="#" class="sub-item">Original Goods</a><a href="#" class="sub-item">Wearable device</a></div>
-        </li>
-        <li class="nav-item">
-            <div class="nav-link" onclick="document.getElementById('l-drop').classList.toggle('show')">ALL L2I <i class="fa-solid fa-chevron-down"></i></div>
-            <div id="l-drop" class="dropdown"><a href="#" class="sub-item">Necklace</a><a href="#" class="sub-item">Ring</a></div>
-        </li>
-        <li class="nav-item" style="margin-top: 30px;"><a href="#" class="nav-link" style="opacity:0.6;">CONTACT US</a></li>
-    </ul>
-    <div class="sidebar-footer">
-        <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT</a>
-        <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i> @6tto.o ・ L2i</a>
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div style="text-align: right; cursor: pointer; margin-bottom: 30px;" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
+    <a href="#" class="nav-link" style="font-weight: 600;">HOME</a>
+    <div class="nav-link" onclick="toggleDropdown('m-drop')">ALL MESSYTT <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+    <div id="m-drop" class="dropdown">
+        <a href="#" class="nav-link" style="font-size: 0.75rem; opacity: 0.7;">Clothing</a>
+        <a href="#" class="nav-link" style="font-size: 0.75rem; opacity: 0.7;">Original Goods</a>
     </div>
+    <div class="nav-link" onclick="toggleDropdown('l-drop')">ALL L2I <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+    <div id="l-drop" class="dropdown">
+        <a href="#" class="nav-link" style="font-size: 0.75rem; opacity: 0.7;">Necklace</a>
+        <a href="#" class="nav-link" style="font-size: 0.75rem; opacity: 0.7;">Ring</a>
+    </div>
+    <a href="#" class="nav-link" style="margin-top: 20px; opacity: 0.6;">CONTACT US</a>
 </div>
 
+<div class="main-container">
+    <div class="product-grid">
 <!-- 購物車 Drawer -->
 <div class="panel cart-drawer" id="cart-drawer">
     <div class="panel-header"><div>YOUR BAG</div><i class="fa-solid fa-xmark" onclick="closeAllPanels()"></i></div>
