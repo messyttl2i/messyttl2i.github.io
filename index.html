@@ -29,9 +29,9 @@
         .cart-icon-wrapper { position: relative; cursor: pointer; }
         .cart-count { position: absolute; top: -8px; right: -8px; background: var(--text-amethyst); color: #fff; font-size: 0.65rem; padding: 2px 5px; border-radius: 50%; }
 
-        /* --- Sidebar & Cart Drawer --- */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); display: none; z-index: 1100; }
-        .panel { position: fixed; top: 0; height: 100%; background: rgba(240, 243, 247, 0.98); transition: 0.4s; z-index: 1101; padding: 40px 25px; display: flex; flex-direction: column; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        /* --- Panels (Sidebar & Cart Drawer) --- */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.15); display: none; z-index: 1100; }
+        .panel { position: fixed; top: 0; height: 100%; background: rgba(240, 243, 247, 0.98); transition: 0.4s; z-index: 1101; padding: 40px 25px; display: flex; flex-direction: column; box-shadow: 0 0 15px rgba(0,0,0,0.05); }
         .sidebar { left: -320px; width: var(--sidebar-width); }
         .cart-drawer { right: -350px; width: 350px; }
         .panel.active { left: 0; }
@@ -39,46 +39,51 @@
         
         .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; font-family: 'Playfair Display', serif; letter-spacing: 1px; }
 
-        /* Sidebar 導覽內容 (嚴格保留) */
+        /* Sidebar 導覽內容 (嚴格更新目錄) */
         .nav-list { list-style: none; flex-grow: 1; }
-        .nav-item { margin-bottom: 25px; }
-        .nav-link { text-decoration: none; color: var(--text-amethyst); font-size: 0.9rem; text-transform: uppercase; cursor: pointer; display: flex; justify-content: space-between; }
-        .dropdown { padding-left: 15px; display: none; margin-top: 15px; }
+        .nav-item { margin-bottom: 22px; }
+        .nav-link { text-decoration: none; color: var(--text-amethyst); font-size: 0.85rem; text-transform: uppercase; cursor: pointer; display: flex; justify-content: space-between; letter-spacing: 1.5px; }
+        .dropdown { padding-left: 15px; display: none; margin-top: 12px; }
         .dropdown.show { display: block; }
-        .social-link { display: flex; align-items: center; text-decoration: none; color: var(--text-amethyst); font-size: 0.8rem; margin-top: 15px; }
+        .sub-item { display: block; padding: 6px 0; color: var(--text-amethyst); opacity: 0.7; text-decoration: none; font-size: 0.75rem; letter-spacing: 1px; }
+        
+        .sidebar-footer { border-top: 1px solid rgba(138, 95, 162, 0.1); padding-top: 25px; }
+        .social-link { display: flex; align-items: center; text-decoration: none; color: var(--text-amethyst); font-size: 0.75rem; margin-bottom: 12px; }
+        .social-link i { margin-right: 10px; font-size: 1rem; }
 
-        /* --- 購物車內部清單 --- */
+        /* --- 購物車 Drawer --- */
         .cart-items { flex-grow: 1; overflow-y: auto; }
-        .cart-item { display: flex; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid rgba(138, 95, 162, 0.1); padding-bottom: 15px; }
-        .cart-item img { width: 70px; height: 70px; object-fit: cover; }
-        .cart-item-info { flex-grow: 1; font-size: 0.75rem; }
-        .cart-item-name { font-weight: 600; margin-bottom: 4px; }
-        .cart-footer { border-top: 2px solid var(--text-amethyst); padding-top: 20px; }
-        .cart-total { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: 600; }
+        .cart-item { display: flex; gap: 12px; margin-bottom: 18px; border-bottom: 1px solid rgba(138, 95, 162, 0.1); padding-bottom: 15px; }
+        .cart-item img { width: 65px; height: 65px; object-fit: cover; border-radius: 2px; }
+        .cart-item-info { flex-grow: 1; font-size: 0.7rem; }
+        .cart-item-name { font-weight: 600; margin-bottom: 3px; }
+        .cart-footer { border-top: 1px solid var(--text-amethyst); padding-top: 20px; }
+        .cart-total { display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: 600; font-size: 0.85rem; }
 
         /* --- 商品展示區 --- */
         .main-container { max-width: 1400px; margin: 50px auto; padding: 0 4%; }
-        .product-grid { display: grid; grid-template-columns: repeat(2, 4fr); gap: 40px 20px; }
+        .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 45px 18px; }
         
-        /* 圖片滾動器 */
-        .image-box { width: 100%; aspect-ratio: 1/1; background: #f5f5f5; margin-bottom: 12px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; border-radius: 2px; }
+        /* 圖片自動輪播容器 */
+        .image-box { width: 100%; aspect-ratio: 1/1; background: #f5f5f5; margin-bottom: 10px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; }
         .image-box::-webkit-scrollbar { display: none; }
         .image-box img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
 
-        /* 尺寸選擇器 */
-        .size-select { width: 100%; padding: 5px; font-size: 0.7rem; color: var(--text-amethyst); border: 1px solid rgba(138, 95, 162, 0.2); background: none; margin-bottom: 10px; cursor: pointer; outline: none; }
+        /* 尺寸選擇 */
+        .size-select { width: 100%; padding: 6px; font-size: 0.65rem; color: var(--text-amethyst); border: 1px solid rgba(138, 95, 162, 0.2); background: none; margin-bottom: 10px; cursor: pointer; outline: none; }
 
-        .product-name { font-size: 0.75rem; font-weight: 500; margin-bottom: 5px; color: #333; }
-        .product-price { font-size: 0.8rem; color: #666; margin-bottom: 12px; font-weight: 500; }
+        .product-info { text-align: left; }
+        .product-name { font-size: 0.75rem; font-weight: 500; margin-bottom: 4px; color: #222; }
+        .product-price { font-size: 0.75rem; color: #666; margin-bottom: 12px; }
 
-        /* 按鈕風格 */
-        .btn { width: 100%; padding: 10px 0; font-size: 0.65rem; border: 1px solid var(--text-amethyst); cursor: pointer; background: none; color: var(--text-amethyst); text-transform: uppercase; margin-top: 5px; transition: 0.3s; }
+        /* 按鈕設計 */
+        .btn { width: 100%; padding: 9px 0; font-size: 0.6rem; border: 1px solid var(--text-amethyst); cursor: pointer; background: none; color: var(--text-amethyst); text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
         .btn:hover { background: var(--text-amethyst); color: #fff; }
         .btn-buy { background: var(--text-amethyst); color: #fff; }
 
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 10px 25px; font-size: 0.75rem; opacity: 0; transition: 0.5s; z-index: 2000; }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 10px 20px; font-size: 0.7rem; opacity: 0; transition: 0.5s; z-index: 2000; pointer-events: none; border-radius: 2px; }
 
-        @media (max-width: 900px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 1000px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
 <body>
@@ -102,38 +107,45 @@
 
 <div class="overlay" id="overlay" onclick="closeAllPanels()"></div>
 
-<!-- Sidebar (您的原本設定) -->
-<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-<div class="sidebar" id="sidebar">
-    <div style="text-align: right; cursor: pointer;" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
+<!-- Sidebar (依要求精確更新目錄) -->
+<div class="panel sidebar" id="sidebar">
+    <div class="panel-header"><div>MESSYTT&L2I</div><i class="fa-solid fa-xmark" onclick="closeAllPanels()"></i></div>
     <ul class="nav-list">
-        <li class="nav-item"><a href="#" class="nav-link" style="font-weight: 600;">HOME</a></li>
         <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('m-drop')">ALL MESSYTT <i class="fa-solid fa-chevron-down"></i></div>
-            <div id="m-drop" class="dropdown-content">
-                <a href="#" class="sub-item">Clothing</a>
-                <a href="#" class="sub-item">Original Goods</a>
+            <a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link">26SS</a>
+        </li>
+        <li class="nav-item">
+            <div class="nav-link" onclick="toggleDropdown('m-drop')">ALL MESSYTT <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div id="m-drop" class="dropdown">
+                <a href="#" class="sub-item">CLOTHING</a>
+                <a href="#" class="sub-item">ORIGINAL GOODS</a>
             </div>
         </li>
         <li class="nav-item">
-            <div class="nav-link" onclick="toggleDropdown('l-drop')">ALL L2I <i class="fa-solid fa-chevron-down"></i></div>
-            <div id="l-drop" class="dropdown-content">
-                <a href="#" class="sub-item">Necklace</a>
-                <a href="#" class="sub-item">Ring</a>
+            <div class="nav-link" onclick="toggleDropdown('l-drop')">ALL L2I <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div id="l-drop" class="dropdown">
+                <a href="#" class="sub-item">NECKLACE</a>
+                <a href="#" class="sub-item">RING</a>
             </div>
+        </li>
+        <li class="nav-item" style="margin-top: 30px;">
+            <a href="#" class="nav-link" style="opacity: 0.6;">CONTACT US</a>
         </li>
     </ul>
+    <div class="sidebar-footer">
+        <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT</a>
+        <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i> @6tto.o ・ L2i</a>
+    </div>
 </div>
 
-<div class="main-container">
-    <div class="product-grid">
-        
 <!-- 購物車 Drawer -->
 <div class="panel cart-drawer" id="cart-drawer">
     <div class="panel-header"><div>YOUR BAG</div><i class="fa-solid fa-xmark" onclick="closeAllPanels()"></i></div>
     <div class="cart-items" id="cartItemsList">
-        <!-- 購物車清單由 JS 渲染 -->
+        <!-- JS 渲染 -->
     </div>
     <div class="cart-footer">
         <div class="cart-total"><span>TOTAL</span><span id="cartTotalPrice">NT$ 0</span></div>
@@ -141,40 +153,34 @@
     </div>
 </div>
 
-<!-- 商品區域 -->
+<!-- 商品主區域 -->
 <div class="main-container">
     <div class="product-grid">
-        <!-- 商品 1 -->
+        <!-- 商品範例 1 -->
         <div class="product-card">
             <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)">
                 <img src="images/S__81002508_0.jpg">
                 <img src="images/S__81002509_0.jpg">
+            </div>
+            <div class="product-info">
+                <div class="product-name">Cyber Butterfly Necklace</div>
+                <div class="product-price">NT$ 2,580</div>
+                <select class="size-select" id="size-1">
+                    <option value="One Size">One Size</option>
+                </select>
+                <button class="btn" onclick="addToCart('1', 'Butterfly Necklace', 2580, 'images/S__81002508_0.jpg', 'size-1')">Add to Bag</button>
+            </div>
+        </div>
+
+        <!-- 商品範例 2 -->
+        <div class="product-card">
+            <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)">
                 <img src="images/S__81002510_0.jpg">
                 <img src="images/S__81002511_0.jpg">
             </div>
             <div class="product-info">
-                <div class="product-name">股花GuHua</div>
-                <div class="product-price">NT$ 1,890</div>
-                <select class="size-select" id="size-1">
-                    <option value="One Size">One Size</option>
-                </select>
-                <div class="btn-group">
-                    <button class="btn" onclick="addToCart('1', 'Butterfly Necklace', 2580, 'images/S__81002508_0.jpg', 'size-1')">Add to Bag</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 商品 2 -->
-        <div class="product-card">
-            <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)">
-                <img src="images/MessyTT T-SHIRT.jpg">
-                <img src="images/MessyTT T-SHIRT1.jpeg">
-                <img src="images/images/MessyTT T-SHIRT1.jpg">
-                <img src="images/images/MessyTT T-SHIRT3.jpg">
-            </div>
-            <div class="product-info">
-                <div class="product-name">MessyTT T-shirt</div>
-                <div class="product-price">NT$ 990</div>
+                <div class="product-name">Mesh Panel Baby-T</div>
+                <div class="product-price">NT$ 1,280</div>
                 <select class="size-select" id="size-2">
                     <option value="S">S</option><option value="M">M</option><option value="L">L</option>
                 </select>
@@ -187,10 +193,9 @@
 <div id="toast">操作成功</div>
 
 <script>
-    // --- 購物車數據 ---
     let cart = [];
 
-    // --- 側邊欄與購物車控制 ---
+    // --- 介面控制 ---
     function togglePanel(id) {
         closeAllPanels();
         document.getElementById(id).classList.add('active');
@@ -202,7 +207,11 @@
         document.getElementById('overlay').style.display = 'none';
     }
 
-    // --- 核心功能：滑鼠移入自動輪播修正版 ---
+    function toggleDropdown(id) {
+        document.getElementById(id).classList.toggle('show');
+    }
+
+    // --- 自動輪播邏輯 ---
     let autoplayInterval;
     function startAutoplay(element) {
         autoplayInterval = setInterval(() => {
@@ -219,7 +228,7 @@
         element.scrollLeft = 0;
     }
 
-    // --- 購物車邏輯 ---
+    // --- 購物車系統 ---
     function addToCart(id, name, price, img, sizeId) {
         const size = document.getElementById(sizeId).value;
         const existing = cart.find(item => item.id === id && item.size === size);
@@ -253,9 +262,9 @@
                     <div class="cart-item-info">
                         <div class="cart-item-name">${item.name}</div>
                         <div style="opacity:0.6">Size: ${item.size}</div>
-                        <div style="margin:5px 0">Qty: ${item.qty}</div>
+                        <div style="margin:4px 0">Qty: ${item.qty}</div>
                         <div style="font-weight:600">NT$ ${item.price.toLocaleString()}</div>
-                        <div style="color:red; cursor:pointer; font-size:0.6rem; margin-top:5px" onclick="removeFromCart(${index})">REMOVE</div>
+                        <div style="color:#aaa; cursor:pointer; font-size:0.6rem; margin-top:5px; text-decoration:underline" onclick="removeFromCart(${index})">REMOVE</div>
                     </div>
                 </div>
             `;
@@ -273,7 +282,7 @@
     function showToast(msg) {
         const t = document.getElementById('toast');
         t.innerText = msg; t.style.opacity = '1';
-        setTimeout(() => { t.style.opacity = '0'; }, 2500);
+        setTimeout(() => { t.style.opacity = '0'; }, 2000);
     }
 </script>
 
