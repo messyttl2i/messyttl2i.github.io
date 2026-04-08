@@ -221,68 +221,64 @@
 </div>
 
 <div id="toast">已成功操作</div>
-
-<!-- 串接 EmailJS (免費發送 Gmail) -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
 <script>
-    // 初始化購物車
+    // 1. 初始化 EmailJS - 請在此處填入您的 Public Key
+    (function(){
+        emailjs.init("YOUR_PUBLIC_KEY_HERE"); // <--- 重要：請在這裡填入您的 Public Key
+    })();
+
     let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
     window.onload = () => updateCartUI();
 
-    // 介面控制
-    function togglePanel(id) {
-        closeAll();
-        document.getElementById(id).classList.add('active');
-        document.getElementById('overlay').style.display = 'block';
-    }
-    function openMemberModal() {
-        closeAll();
-        document.getElementById('memberModal').style.display = 'block';
-        document.getElementById('overlay').style.display = 'block';
-    }
-    function closeAll() {
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.getElementById('memberModal').style.display = 'none';
-        document.getElementById('overlay').style.display = 'none';
-    }
+    function togglePanel(id) { closeAll(); document.getElementById(id).classList.add('active'); document.getElementById('overlay').style.display='block'; }
+    function openMemberModal() { closeAll(); document.getElementById('memberModal').style.display='block'; document.getElementById('overlay').style.display='block'; }
+    function closeAll() { document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById('memberModal').style.display='none'; document.getElementById('overlay').style.display='none'; }
     function toggleDropdown(id) { document.getElementById(id).classList.toggle('show'); }
 
-    // 會員註冊與發信邏輯
+    // --- 發送郵件功能 ---
     function handleRegister() {
+        const btn = document.getElementById('submitBtn');
         const name = document.getElementById('reg_name').value;
         const email = document.getElementById('reg_email').value;
         
-        if(!name || !email) return alert("請填寫姓名與電子郵件！");
+        if(!name || !email) return alert("姓名與 Email 是必須的！");
 
-        showToast("註冊成功！系統正發送見面禮至您的信箱...");
+        btn.innerText = "處理中...";
+        btn.disabled = true;
 
-        // 這裡模擬發送信件 (實際運行需註冊 EmailJS 取得 ServiceID/TemplateID)
-        /*
-        emailjs.send("service_pzf7lvt", "template_lsph3zp", {
-            to_name: name,
-            to_email: email,
-            message: "恭喜您成為 MESSYTT&L2I 的新會員！獲得 30 入會購物金。"
-        }, "user_public_key");
-        */
+        // 2. 填入您的 ServiceID 和 TemplateID
+        const serviceID = "service_pzf7lvt";
+        const templateID = "template_lsph3zp";
 
-        setTimeout(() => {
-            closeAll();
-            showToast(`歡迎加入, ${name}！請檢查信箱領取優惠。`);
-        }, 2000);
+        // 對應 EmailJS 後台設定的變數名稱 (例如 {{user_name}} 和 {{user_email}})
+        const templateParams = {
+            user_name: name,
+            user_email: email,
+            message: "歡迎加入 MessyTT&L2i！恭喜獲得 30 入會購物金。"
+        };
+
+        emailjs.send(serviceID, templateID, templateParams)
+            .then(() => {
+                showToast("註冊成功！見面禮已發送至您的 Gmail。");
+                setTimeout(() => closeAll(), 2000);
+            }, (err) => {
+                alert("發送失敗，請檢查 Public Key 設定: " + JSON.stringify(err));
+            })
+            .finally(() => {
+                btn.innerText = "立即加入！";
+                btn.disabled = false;
+            });
     }
 
-    // 購物車系統
+    // --- 購物車與輪播 (保持基礎) ---
     function addToCart(id, name, price, img, sizeId) {
         const size = document.getElementById(sizeId).value;
         const existing = cart.find(item => item.id === id && item.size === size);
-        if (existing) { existing.qty += 1; } 
-        else { cart.push({ id, name, price, img, size, qty: 1 }); }
+        if (existing) { existing.qty += 1; } else { cart.push({ id, name, price, img, size, qty: 1 }); }
         localStorage.setItem('messy_cart', JSON.stringify(cart));
         updateCartUI();
         togglePanel('cart-drawer');
     }
-
     function updateCartUI() {
         const list = document.getElementById('cartItemsList');
         const count = document.getElementById('cartCount');
@@ -290,29 +286,16 @@
         let totalPrice = 0; let totalCount = 0;
         list.innerHTML = '';
         cart.forEach((item, index) => {
-            totalPrice += item.price * item.qty;
-            totalCount += item.qty;
+            totalPrice += item.price * item.qty; totalCount += item.qty;
             list.innerHTML += `<div class="cart-item"><img src="${item.img}"><div class="cart-item-info"><b>${item.name}</b><br>Size: ${item.size}<br>Qty: ${item.qty}<br>NT$ ${item.price}</div></div>`;
         });
         count.innerText = totalCount;
         total.innerText = `NT$ ${totalPrice.toLocaleString()}`;
     }
-
-    // 圖片自動輪播 (Hover)
     let autoplay;
-    function startAutoplay(el) {
-        autoplay = setInterval(() => {
-            el.scrollLeft += el.offsetWidth;
-            if(el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0;
-        }, 1200);
-    }
+    function startAutoplay(el) { autoplay = setInterval(() => { el.scrollLeft += el.offsetWidth; if(el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0; }, 1200); }
     function stopAutoplay(el) { clearInterval(autoplay); el.scrollLeft = 0; }
-
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.opacity = '1';
-        setTimeout(() => { t.style.opacity = '0'; }, 2500);
-    }
+    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = '1'; setTimeout(() => { t.style.opacity = '0'; }, 2500); }
 </script>
 
 </body>
