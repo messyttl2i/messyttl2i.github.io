@@ -148,16 +148,44 @@
     </div>
 </div>
 
-<!-- Sidebar 側邊欄 (嚴格保留原有層級) -->
+ /* --- 側邊欄目錄 (嚴格恢復原始格式) --- */
+        .nav-list { list-style: none; flex-grow: 1; }
+        .nav-item { margin-bottom: 25px; }
+        .nav-link { text-decoration: none; color: var(--text-amethyst); font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .dropdown-content { max-height: 0; overflow: hidden; transition: 0.3s ease; padding-left: 10px; }
+        .dropdown-content.show { max-height: 250px; margin-top: 15px; }
+        .sub-item { display: block; padding: 8px 0; color: var(--text-amethyst); opacity: 0.7; text-decoration: none; font-size: 0.8rem; text-transform: uppercase; }
+        .sidebar-footer { border-top: 1px solid rgba(138, 95, 162, 0.1); padding-top: 30px; }
+        .social-link { display: flex; align-items: center; text-decoration: none; color: var(--text-amethyst); font-size: 0.8rem; margin-bottom: 15px; opacity: 0.8; }
+        .social-link i { margin-right: 12px; }
+    <!-- Sidebar (完全恢復原始完整目錄) -->
 <div class="panel sidebar" id="sidebar">
-    <div class="panel-header"><div>MESSYTT&L2I</div><i class="fa-solid fa-xmark" style="cursor:pointer" onclick="closeAll()"></i></div>
+    <div class="panel-header"><div>MESSYTT&L2I</div><i class="fa-solid fa-xmark" onclick="closeAll()"></i></div>
     <ul class="nav-list">
         <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a></li>
         <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
         <li class="nav-item">
-            <div class="nav-link" onclick="document.getElementById('m-drop').classList.toggle('show')">ALL MESSYTT <i class="fa-solid fa-chevron-down"></i></div>
-            <div id="m-drop" class="dropdown"><a href="#" class="sub-item">CLOTHING</a><a href="#" class="sub-item">ORIGINAL GOODS</a><a href="#" class="sub-item">Wearable device</a></div>
+            <div class="nav-link" onclick="toggleDropdown('messy-drop')">ALL MESSYTT <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div id="messy-drop" class="dropdown-content">
+                <a href="#" class="sub-item">CLOTHING</a>
+                <a href="#" class="sub-item">ORIGINAL GOODS</a>
+                <a href="#" class="sub-item">Wearable device</a>
+            </div>
         </li>
+        <li class="nav-item">
+            <div class="nav-link" onclick="toggleDropdown('l2i-drop')">ALL L2I <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div id="l2i-drop" class="dropdown-content">
+                <a href="#" class="sub-item">NECKLACE</a>
+                <a href="#" class="sub-item">RING</a>
+            </div>
+        </li>
+        <li class="nav-item" style="margin-top: 30px;"><a href="#" class="nav-link" style="opacity: 0.6;">CONTACT US</a></li>
+    </ul>
+    <div class="sidebar-footer">
+        <a href="https://instagram.com/6ttd_d" class="social-link" target="_blank"><i class="fa-brands fa-instagram"></i> @6ttd_d ・ MessyTT</a>
+        <a href="https://instagram.com/6tto.o" class="social-link" target="_blank"><i class="fa-brands fa-instagram"></i> @6tto.o ・ L2i</a>
+    </div>
+</div>
       <!-- 側邊欄底部社群 -->
     <div class="sidebar-footer">
         <a href="https://instagram.com/6ttd_d" class="social-link" target="_blank">
