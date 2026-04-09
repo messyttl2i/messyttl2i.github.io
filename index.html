@@ -106,13 +106,13 @@
     <div id="formView">
         <h3 style="text-align:center; margin-bottom:25px;">REGISTER:建立你的個人資料！</h3>
         <div class="form-group"><label>用戶名(Account)</label><input type="text" id="reg_name" placeholder=""></div>
-        <div class="form-group"><label>密碼(Password)</label><input type="password" id="reg_pw" placeholder="••••••••"></div>
+        <div class="form-group"><label>密碼(Password)</label><input type="password" id="reg_pw" placeholder="•"></div>
         <div class="form-group"><label>性別(Gentle)</label><select id="reg_gender"><option>女</option><option>男</option></select></div>
         <div class="form-group">
             <label>生日日期(Birth)</label>
             <div style="display:flex; gap:10px;"><input type="number" id="reg_yy" placeholder="年"><input type="number" id="reg_mm" placeholder="月"><input type="number" id="reg_dd" placeholder="日"></div>
         </div>
-        <div class="form-group"><label>聯絡電話(Tel)</label><input type="tel" id="reg_phone" placeholder="09XX-XXX-XXX"></div>
+        <div class="form-group"><label>聯絡電話(Tel)</label><input type="tel" id="reg_phone" placeholder=""></div>
         <div class="form-group"><label>地址(Adress)</label><input type="text" id="reg_address" placeholder=""></div>
         <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="reg_email" placeholder="dream0122230@gmail.com"></div>
         <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
@@ -122,7 +122,7 @@
     <div id="loggedInView">
         <div class="member-profile-header">
             <div style="background:#000; color:#fff; font-size:0.6rem; display:inline-block; padding:2px 8px; border-radius:20px; margin-bottom:10px;">MEMBER</div>
-            <h2 id="displayUserName">賴韻文</h2>
+            <h2 id="displayUserName"></h2>
             <p id="displayUserEmail" style="font-size: 0.7rem; opacity: 0.5;">Email</p>
         </div>
         <div class="member-menu">
@@ -184,7 +184,7 @@
 
 <script>
     // --- 務必填入您的 PUBLIC KEY ---
-    (function(){ emailjs.init({ publicKey: "這裡填入您的_PUBLIC_KEY" }); })();
+    (function(){ emailjs.init({ publicKey: "m1fvagOxoo5vaDvX1" }); })();
 
     let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
     let currentUser = JSON.parse(localStorage.getItem('messy_user')) || null;
