@@ -214,7 +214,7 @@
             user_email: email
         };
 
-        emailjs.send(service_pzf7lvt, template_lsph3zp, templateParams)
+        emailjs.send(serviceID, templateID, templateParams)
             .then(() => {
                 // 成功後切換至成功頁面
                 document.getElementById('formView').style.display = 'none';
