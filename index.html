@@ -7,6 +7,7 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:wght@500&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
     <style>
@@ -37,30 +38,39 @@
         .cart-drawer { right: -350px; width: 350px; }
         .panel.active { left: 0; }
         .cart-drawer.active { right: 0; }
-        
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-family: 'Playfair Display', serif; font-size: 1.2rem; }
 
-        /* --- 會員制度註冊 (依截圖) --- */
+        /* --- 會員註冊彈窗 --- */
         .member-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 30px; z-index: 1200; display: none; width: 95%; max-width: 450px; height: 85vh; overflow-y: auto; box-shadow: 0 15px 40px rgba(0,0,0,0.15); }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 0.75rem; margin-bottom: 5px; opacity: 0.8; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: none; border-bottom: 1px solid var(--bg-sleet); outline: none; font-family: inherit; color: var(--text-amethyst); }
-        
-        /* --- 商品展示區 (4 欄) --- */
+
+        /* 註冊成功頁面樣式 */
+        #successView { display: none; text-align: center; padding: 40px 0; }
+        #successView i { font-size: 4rem; color: #b388eb; margin-bottom: 20px; }
+        #successView h2 { font-family: 'Playfair Display', serif; margin-bottom: 10px; }
+
+        /* --- 側邊欄目錄 (保留) --- */
+        .nav-list { list-style: none; flex-grow: 1; }
+        .nav-item { margin-bottom: 22px; }
+        .nav-link { text-decoration: none; color: var(--text-amethyst); font-size: 0.85rem; text-transform: uppercase; cursor: pointer; display: flex; justify-content: space-between; letter-spacing: 1.5px; }
+        .dropdown { padding-left: 15px; display: none; margin-top: 10px; }
+        .dropdown.show { display: block; }
+        .sub-item { display: block; padding: 6px 0; color: var(--text-amethyst); opacity: 0.7; text-decoration: none; font-size: 0.75rem; }
+
+        /* --- 商品展示區 --- */
         .main-container { max-width: 1400px; margin: 50px auto; padding: 0 4%; }
         .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 45px 18px; }
         .image-box { width: 100%; aspect-ratio: 1/1; background: #f5f5f5; margin-bottom: 10px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; cursor: pointer; }
         .image-box img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
         .image-box::-webkit-scrollbar { display: none; }
 
-        /* 按鈕風格 */
+        /* 按鈕設計 */
         .btn { width: 100%; padding: 12px 0; font-size: 0.7rem; border: 1px solid var(--text-amethyst); cursor: pointer; background: none; color: var(--text-amethyst); text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
         .btn:hover { background: var(--text-amethyst); color: #fff; }
         .btn-full { background: var(--text-amethyst); color: #fff; }
 
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 12px 25px; font-size: 0.75rem; opacity: 0; transition: 0.5s; z-index: 3000; pointer-events: none; border-radius: 2px; }
-
-        @media (max-width: 1000px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 12px 25px; font-size: 0.75rem; opacity: 0; transition: 0.5s; z-index: 3000; border-radius: 2px; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -85,26 +95,37 @@
 
 <!-- 會員註冊彈窗 -->
 <div class="member-modal" id="memberModal">
-    <h3 style="text-align:center; margin-bottom:20px;">請輸入你的個人資料，以完成註冊流程！</h3>
-    <div class="form-group"><label>用戶名</label><input type="text" id="reg_name" placeholder=""></div>
-    <div class="form-group"><label>密碼</label><input type="password" id="reg_pw" placeholder="••••••••"></div>
-    <div class="form-group"><label>性別</label><select id="reg_gender"><option>女</option><option>男</option></select></div>
-    <div class="form-group">
-        <label>生日日期</label>
-        <div style="display:flex; gap:10px;">
-            <input type="number" id="reg_yy" placeholder="年">
-            <input type="number" id="reg_mm" placeholder="月">
-            <input type="number" id="reg_dd" placeholder="日">
+    <!-- 註冊表單視圖 -->
+    <div id="formView">
+        <h3 style="text-align:center; margin-bottom:20px;">請輸入你的個人資料，以完成註冊流程！</h3>
+        <div class="form-group"><label>用戶名</label><input type="text" id="reg_name" placeholder=""></div>
+        <div class="form-group"><label>密碼</label><input type="password" id="reg_pw" placeholder="••••••••"></div>
+        <div class="form-group"><label>性別</label><select id="reg_gender"><option>女</option><option>男</option></select></div>
+        <div class="form-group">
+            <label>生日日期</label>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="reg_yy" placeholder="年">
+                <input type="number" id="reg_mm" placeholder="月">
+                <input type="number" id="reg_dd" placeholder="日">
+            </div>
         </div>
+        <div class="form-group"><label>聯絡電話</label><input type="tel" id="reg_phone" placeholder="聯絡電話是必須的"></div>
+        <div class="form-group"><label>地址</label><input type="text" id="reg_address" placeholder="地址是必須的"></div>
+        <div class="form-group"><label>電子郵件 (Email)</label><input type="email" id="reg_email" placeholder="dream0122230@gmail.com"></div>
+        <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
     </div>
-    <div class="form-group"><label>聯絡電話</label><input type="tel" id="reg_phone" placeholder="聯絡電話是必須的"></div>
-    <div class="form-group"><label>地址</label><input type="text" id="reg_address" placeholder="地址是必須的"></div>
-    <div class="form-group"><label>電子郵件 (Email)</label><input type="email" id="reg_email" placeholder="dream0122230@gmail.com"></div>
-    
-    <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
+
+    <!-- 註冊成功視圖 -->
+    <div id="successView">
+        <i class="fa-solid fa-circle-check"></i>
+        <h2 id="welcomeName">賴韻文 您好,</h2>
+        <p>恭喜您成為 MESSYTT&L2I 的新會員！</p>
+        <p style="margin: 20px 0; font-size: 0.8rem; opacity: 0.7;">見面禮 30 入會購物金已發送至您的信箱。<br>立即去領取並開始購物吧！</p>
+        <button class="btn btn-full" onclick="closeAll()">領取入會禮物並購物</button>
+    </div>
 </div>
 
-<!-- Sidebar 側邊欄 (保留您的目錄) -->
+<!-- Sidebar 側邊欄 -->
 <div class="panel sidebar" id="sidebar">
     <div class="panel-header"><div>MESSYTT&L2I</div><i class="fa-solid fa-xmark" onclick="closeAll()"></i></div>
     <ul class="nav-list">
@@ -121,7 +142,7 @@
     </ul>
 </div>
 
-<!-- 購物車 Drawer -->
+<!-- 購物車 -->
 <div class="panel cart-drawer" id="cart-drawer">
     <div class="panel-header"><div>YOUR BAG</div><i class="fa-solid fa-xmark" onclick="closeAll()"></i></div>
     <div class="cart-items" id="cartItemsList"></div>
@@ -131,7 +152,7 @@
     </div>
 </div>
 
-<!-- 商品範例 -->
+<!-- 商品範例區 -->
 <div class="main-container">
     <div class="product-grid">
         <div class="product-card">
@@ -148,87 +169,12 @@
     </div>
 </div>
 
-<div id="toast">操作成功</div>
+<div id="toast">已成功操作</div>
 
-<!-- 引入 EmailJS SDK -->
+<!-- EmailJS SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
 <script>
-    // 1. 初始化 EmailJS - 請在此處填入您的 Public Key
+    // --- 重要：請在此處填入您的 EmailJS Public Key ---
     (function(){
-        emailjs.init("YOUR_PUBLIC_KEY_HERE"); // <--- 重要：請在這裡填入您的 Public Key
-    })();
-
-    let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
-    window.onload = () => updateCartUI();
-
-    function togglePanel(id) { closeAll(); document.getElementById(id).classList.add('active'); document.getElementById('overlay').style.display='block'; }
-    function openMemberModal() { closeAll(); document.getElementById('memberModal').style.display='block'; document.getElementById('overlay').style.display='block'; }
-    function closeAll() { document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById('memberModal').style.display='none'; document.getElementById('overlay').style.display='none'; }
-    function toggleDropdown(id) { document.getElementById(id).classList.toggle('show'); }
-
-    // --- 發送郵件功能 ---
-    function handleRegister() {
-        const btn = document.getElementById('submitBtn');
-        const name = document.getElementById('reg_name').value;
-        const email = document.getElementById('reg_email').value;
-        
-        if(!name || !email) return alert("姓名與 Email 是必須的！");
-
-        btn.innerText = "處理中...";
-        btn.disabled = true;
-
-        // 2. 填入您的 ServiceID 和 TemplateID
-        const serviceID = "service_pzf7lvt";
-        const templateID = "template_lsph3zp";
-
-        // 對應 EmailJS 後台設定的變數名稱 (例如 {{user_name}} 和 {{user_email}})
-        const templateParams = {
-            user_name: name,
-            user_email: email,
-            message: "歡迎加入 MessyTT&L2i！恭喜獲得 30 入會購物金。"
-        };
-
-        emailjs.send(serviceID, templateID, templateParams)
-            .then(() => {
-                showToast("註冊成功！見面禮已發送至您的 Gmail。");
-                setTimeout(() => closeAll(), 2000);
-            }, (err) => {
-                alert("發送失敗，請檢查 Public Key 設定: " + JSON.stringify(err));
-            })
-            .finally(() => {
-                btn.innerText = "立即加入！";
-                btn.disabled = false;
-            });
-    }
-
-    // --- 購物車與輪播 (保持基礎) ---
-    function addToCart(id, name, price, img, sizeId) {
-        const size = document.getElementById(sizeId).value;
-        const existing = cart.find(item => item.id === id && item.size === size);
-        if (existing) { existing.qty += 1; } else { cart.push({ id, name, price, img, size, qty: 1 }); }
-        localStorage.setItem('messy_cart', JSON.stringify(cart));
-        updateCartUI();
-        togglePanel('cart-drawer');
-    }
-    function updateCartUI() {
-        const list = document.getElementById('cartItemsList');
-        const count = document.getElementById('cartCount');
-        const total = document.getElementById('cartTotalPrice');
-        let totalPrice = 0; let totalCount = 0;
-        list.innerHTML = '';
-        cart.forEach((item, index) => {
-            totalPrice += item.price * item.qty; totalCount += item.qty;
-            list.innerHTML += `<div class="cart-item"><img src="${item.img}"><div class="cart-item-info"><b>${item.name}</b><br>Size: ${item.size}<br>Qty: ${item.qty}<br>NT$ ${item.price}</div></div>`;
-        });
-        count.innerText = totalCount;
-        total.innerText = `NT$ ${totalPrice.toLocaleString()}`;
-    }
-    let autoplay;
-    function startAutoplay(el) { autoplay = setInterval(() => { el.scrollLeft += el.offsetWidth; if(el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0; }, 1200); }
-    function stopAutoplay(el) { clearInterval(autoplay); el.scrollLeft = 0; }
-    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = '1'; setTimeout(() => { t.style.opacity = '0'; }, 2500); }
-</script>
-
-</body>
-</html>
+        emailjs.init("YOUR_PUBLIC_KEY_HERE");
