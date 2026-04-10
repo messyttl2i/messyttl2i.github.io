@@ -117,8 +117,8 @@
 </header>
 
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
-    
-    <!-- 視圖 1: 註冊表單 -->
+
+<div class="member-modal" id="memberModal">
     <div id="formView">
         <h3 style="text-align:center; margin-bottom:25px;">REGISTER:建立你的個人資料！</h3>
         <div class="form-group"><label>用戶名(Account)</label><input type="text" id="reg_name" placeholder=""></div>
@@ -128,13 +128,12 @@
             <label>生日日期(Birth)</label>
             <div style="display:flex; gap:10px;"><input type="number" id="reg_yy" placeholder="年"><input type="number" id="reg_mm" placeholder="月"><input type="number" id="reg_dd" placeholder="日"></div>
         </div>
-         <div class="form-group"><label>性別(Gentle)</label><select id="reg_gender"><option>女</option><option>男</option></select></div>
+        <div class="form-group"><label>性別(Gentle)</label><select id="reg_gender"><option>女</option><option>男</option></select></div>
         <div class="form-group"><label>聯絡電話(Tel)</label><input type="tel" id="reg_phone" placeholder=""></div>
         <div class="form-group"><label>地址(Adress)</label><input type="text" id="reg_address" placeholder=""></div>
         <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
     </div>
 
-    <!-- 視圖 2: 已登入狀態 -->
     <div id="loggedInView">
         <div class="member-profile-header">
             <div style="background:#000; color:#fff; font-size:0.6rem; display:inline-block; padding:2px 8px; border-radius:20px; margin-bottom:10px;">MEMBER</div>
@@ -147,7 +146,8 @@
         </div>
         <button class="btn btn-full" style="margin-top: 30px;" onclick="closeAll()">返回首頁 BACK</button>
     </div>
-</div>
+</div> ```
+    
 <div class="panel sidebar" id="sidebar">
     <div class="panel-header">
         <div>MESSYTT&L2I</div>
