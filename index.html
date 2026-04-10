@@ -34,8 +34,8 @@
 
         /* --- 面板系統 --- */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.15); display: none; z-index: 1100; backdrop-filter: blur(2px); }
-        .panel { position: fixed; top: 0; height: 100%; background: rgba(240, 243, 247, 0.98); transition: 0.4s ease; z-index: 1101; padding: 40px 25px; display: flex; flex-direction: column; }
-        .sidebar { left: -320px; width: var(--sidebar-width); margin-bottom: 40px; }
+        .panel { position: fixed; top: 0; height: 100%; background: rgba(240, 243, 247, 0.98); transition: 0.4s ease; z-index: 1101; padding: 40px 25px; display: flex; flex-direction: column; margin-bottom: 40px;}
+        .sidebar { left: -320px; width: var(--sidebar-width); }
         .cart-drawer { right: -350px; width: 350px; }
         .panel.active { left: 0; }
         .cart-drawer.active { right: 0; }
