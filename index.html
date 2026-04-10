@@ -72,7 +72,7 @@
         
         /* --- 商品展示區 --- */
         .main-container { max-width: 1400px; margin: 50px auto; padding: 0 4%; }
-        .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 45px 18px; }
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 45px 18px; }
         .image-box { width: 100%; aspect-ratio: 1/1; background: #f5f5f5; margin-bottom: 10px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; }
         .image-box::-webkit-scrollbar { display: none; }
         .image-box img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
@@ -87,7 +87,23 @@
         .form-toggle { text-align: center; margin-top: 15px; font-size: 0.8rem; opacity: 0.7; }
         .form-toggle a { color: var(--text-amethyst); cursor: pointer; text-decoration: underline; }
 
-        @media (max-width: 1000px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .product-grid { grid-template-columns: repeat(1, 1fr); } }
+
+        /* --- 購物車項目按鈕 --- */
+        .cart-item { display: flex; gap: 10px; margin-bottom: 15px; align-items: flex-start; }
+        .cart-item-info { flex: 1; }
+        .cart-qty-controls { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .cart-qty-btn { width: 24px; height: 24px; border: 1px solid var(--text-amethyst); background: none; color: var(--text-amethyst); cursor: pointer; font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .cart-qty-btn:hover { background: var(--text-amethyst); color: #fff; }
+        .cart-qty-num { font-size: 0.85rem; min-width: 20px; text-align: center; }
+        .cart-remove-btn { background: none; border: none; color: #999; cursor: pointer; font-size: 0.75rem; margin-top: 4px; text-decoration: underline; padding: 0; }
+        .cart-remove-btn:hover { color: #c00; }
+
+        /* --- 會員資料編輯視圖 --- */
+        #editProfileView { display: none; }
+        .edit-profile-back { cursor: pointer; font-size: 0.8rem; opacity: 0.6; margin-bottom: 20px; display: inline-block; }
+        .edit-profile-back:hover { opacity: 1; }
+        .edit-section-title { font-size: 0.75rem; opacity: 0.5; letter-spacing: 2px; text-transform: uppercase; margin: 20px 0 10px; border-top: 1px solid #eee; padding-top: 15px; }
     </style>
 </head>
 <body>
@@ -157,33 +173,64 @@
             <p id="displayUserEmail" style="font-size: 0.7rem; opacity: 0.5;"></p>
         </div>
         <div class="member-menu">
-            <div class="member-menu-item" onclick="showToast('會員資料載入中...')"><span>會員資料 Membership</span><span>&#8250;</span></div>
+            <div class="member-menu-item" onclick="handleEditProfile()"><span>會員資料 Membership</span><span>&#8250;</span></div>
             <div class="member-menu-item" style="margin-top: 20px; border-top: 1px solid #f0f0f0;" onclick="handleLogout()"><span>登出 Log out</span></div>
         </div>
         <button class="btn btn-full" style="margin-top: 30px;" onclick="closeAll()">返回首頁 BACK</button>
     </div>
-</div> 
-    
+
+    <div id="editProfileView">
+        <span class="edit-profile-back" onclick="showLoggedInView()">&#8592; 返回會員頁面</span>
+        <h3 style="text-align:center; margin-bottom:20px;">修改會員資料</h3>
+        <div class="form-group"><label>姓名(Name)</label><input type="text" id="edit_name" placeholder=""></div>
+        <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="edit_email" placeholder=""></div>
+        <div class="form-group"><label>電話(Phone)</label><input type="tel" id="edit_phone" placeholder=""></div>
+        <div class="form-group">
+            <label>性別(Gender)</label>
+            <select id="edit_gender">
+                <option value="">-- 請選擇 --</option>
+                <option value="male">男 Male</option>
+                <option value="female">女 Female</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>生日(Birth)</label>
+            <div style="display:flex; gap:8px;">
+                <input type="number" id="edit_birth_year" placeholder="年" min="1900" max="2099" style="flex:2;">
+                <input type="number" id="edit_birth_month" placeholder="月" min="1" max="12" style="flex:1;">
+                <input type="number" id="edit_birth_day" placeholder="日" min="1" max="31" style="flex:1;">
+            </div>
+        </div>
+        <div class="edit-section-title">修改密碼（選填）</div>
+        <div class="form-group"><label>新密碼(New Password)</label><input type="password" id="edit_new_pw" placeholder="留空則不修改"></div>
+        <div class="form-group"><label>確認新密碼(Confirm)</label><input type="password" id="edit_confirm_pw" placeholder="再次輸入新密碼"></div>
+        <div class="edit-section-title">驗證身份</div>
+        <div class="form-group"><label>目前密碼(Current Password) *</label><input type="password" id="edit_current_pw" placeholder="請輸入目前密碼以確認修改"></div>
+        <div id="editProfileError" style="color:red; font-size:0.75rem; margin-bottom:10px; display:none;"></div>
+        <button class="btn btn-full" onclick="saveProfileChanges()">儲存修改 SAVE</button>
+    </div>
+</div>
+
 <div class="panel sidebar" id="sidebar">
     <div class="panel-header">
         <div>MESSYTT&L2I</div>
     </div>   
     <ul class="nav-list">
-        <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a></li>
+        <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;" onclick="filterProducts('ALL'); closeAll();">HOME</a></li>
         <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
         <li class="nav-item">
             <div class="nav-link" onclick="document.getElementById('m-drop').classList.toggle('show')">ALL MESSYTT <span>&#8964;</span></div>
             <div id="m-drop" class="dropdown">
-                <a href="#" class="sub-item">CLOTHING</a>
-                <a href="#" class="sub-item">ORIGINAL GOODS</a>
-                <a href="#" class="sub-item">Wearable device</a>
+                <a href="#" class="sub-item" onclick="filterProducts('CLOTHING'); closeAll();">CLOTHING</a>
+                <a href="#" class="sub-item" onclick="filterProducts('ORIGINAL GOODS'); closeAll();">ORIGINAL GOODS</a>
+                <a href="#" class="sub-item" onclick="filterProducts('Wearable device'); closeAll();">Wearable device</a>
             </div>
         </li>
         <li class="nav-item">
             <div class="nav-link" onclick="document.getElementById('l-drop').classList.toggle('show')">ALL L2I <span>&#8964;</span></div>
             <div id="l-drop" class="dropdown">
-                <a href="#" class="sub-item">NECKLACE</a>
-                <a href="#" class="sub-item">RING</a>
+                <a href="#" class="sub-item" onclick="filterProducts('NECKLACE'); closeAll();">NECKLACE</a>
+                <a href="#" class="sub-item" onclick="filterProducts('RING'); closeAll();">RING</a>
             </div>
         </li>
         <li class="nav-item" style="margin-top: 30px;"><a href="#" class="nav-link" style="opacity:0.6;">CONTACT US</a></li>
@@ -212,7 +259,7 @@
 <!-- 商品主區域 -->
 <div class="main-container">
     <div class="product-grid">
-        <div class="product-card">
+        <div class="product-card" data-category="CLOTHING">
             <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)">
                 <img src="images/S__81002508_0.jpg"><img src="images/S__81002509_0.jpg">
             </div>
@@ -243,12 +290,14 @@
         if (currentUser) {
             document.getElementById('formView').style.display = 'none';
             document.getElementById('loggedInView').style.display = 'block';
+            document.getElementById('editProfileView').style.display = 'none';
             document.getElementById('loginDot').style.display = 'block';
             document.getElementById('displayUserName').innerText = currentUser.name || currentUser.email;
             document.getElementById('displayUserEmail').innerText = currentUser.email;
         } else {
             document.getElementById('formView').style.display = 'block';
             document.getElementById('loggedInView').style.display = 'none';
+            document.getElementById('editProfileView').style.display = 'none';
             document.getElementById('loginDot').style.display = 'none';
             showRegisterForm();
         }
@@ -365,16 +414,119 @@
         const count = document.getElementById('cartCount');
         const total = document.getElementById('cartTotalPrice');
         let totalPrice = 0; let totalCount = 0; list.innerHTML = '';
-        cart.forEach((item, index) => {
+        cart.forEach((item) => {
             totalPrice += item.price * item.qty; totalCount += item.qty;
-            list.innerHTML += `<div style="display:flex; gap:10px; margin-bottom:15px;"><img src="${item.img}" width="50"><div><b>${item.name}</b><br>Qty: ${item.qty}<br>NT$ ${item.price}</div></div>`;
+            list.innerHTML += `<div class="cart-item">
+                <img src="${item.img}" width="50" style="flex-shrink:0;">
+                <div class="cart-item-info">
+                    <b>${item.name}</b><br>
+                    <span style="font-size:0.8rem;">NT$ ${item.price.toLocaleString()}</span>
+                    <div class="cart-qty-controls">
+                        <button class="cart-qty-btn" onclick="updateQuantity('${item.id}', -1)">&#8722;</button>
+                        <span class="cart-qty-num">${item.qty}</span>
+                        <button class="cart-qty-btn" onclick="updateQuantity('${item.id}', 1)">&#43;</button>
+                        <button class="cart-remove-btn" onclick="removeFromCart('${item.id}')">刪除</button>
+                    </div>
+                </div>
+            </div>`;
         });
         count.innerText = totalCount; total.innerText = `NT$ ${totalPrice.toLocaleString()}`;
+    }
+    function updateQuantity(id, delta) {
+        const item = cart.find(i => i.id === id);
+        if (!item) return;
+        item.qty += delta;
+        if (item.qty <= 0) { cart = cart.filter(i => i.id !== id); }
+        localStorage.setItem('messy_cart', JSON.stringify(cart));
+        updateCartUI();
+    }
+    function removeFromCart(id) {
+        cart = cart.filter(i => i.id !== id);
+        localStorage.setItem('messy_cart', JSON.stringify(cart));
+        updateCartUI();
     }
     let autoplay;
     function startAutoplay(el) { autoplay = setInterval(() => { el.scrollLeft += el.offsetWidth; if(el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0; }, 1200); }
     function stopAutoplay(el) { clearInterval(autoplay); }
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = '1'; setTimeout(() => t.style.opacity = '0', 2500); }
+
+    function showLoggedInView() {
+        document.getElementById('loggedInView').style.display = 'block';
+        document.getElementById('editProfileView').style.display = 'none';
+    }
+
+    function handleEditProfile() {
+        if (!currentUser) return;
+        document.getElementById('edit_name').value = currentUser.name || '';
+        document.getElementById('edit_email').value = currentUser.email || '';
+        document.getElementById('edit_phone').value = currentUser.phone || '';
+        document.getElementById('edit_gender').value = currentUser.gender || '';
+        if (currentUser.birth) {
+            const parts = currentUser.birth.split('-');
+            document.getElementById('edit_birth_year').value = parts[0] || '';
+            document.getElementById('edit_birth_month').value = parts[1] ? parseInt(parts[1]) : '';
+            document.getElementById('edit_birth_day').value = parts[2] ? parseInt(parts[2]) : '';
+        } else {
+            document.getElementById('edit_birth_year').value = '';
+            document.getElementById('edit_birth_month').value = '';
+            document.getElementById('edit_birth_day').value = '';
+        }
+        document.getElementById('edit_new_pw').value = '';
+        document.getElementById('edit_confirm_pw').value = '';
+        document.getElementById('edit_current_pw').value = '';
+        document.getElementById('editProfileError').style.display = 'none';
+        document.getElementById('loggedInView').style.display = 'none';
+        document.getElementById('editProfileView').style.display = 'block';
+    }
+
+    function saveProfileChanges() {
+        const errEl = document.getElementById('editProfileError');
+        const name = document.getElementById('edit_name').value.trim();
+        const email = document.getElementById('edit_email').value.trim();
+        const phone = document.getElementById('edit_phone').value.trim();
+        const gender = document.getElementById('edit_gender').value;
+        const birthYear = document.getElementById('edit_birth_year').value.trim();
+        const birthMonth = document.getElementById('edit_birth_month').value.trim();
+        const birthDay = document.getElementById('edit_birth_day').value.trim();
+        const newPw = document.getElementById('edit_new_pw').value;
+        const confirmPw = document.getElementById('edit_confirm_pw').value;
+        const currentPw = document.getElementById('edit_current_pw').value;
+
+        if (!name || !email) { errEl.innerText = '姓名與 Email 為必填！'; errEl.style.display = 'block'; return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.innerText = '請輸入有效的 Email 格式！'; errEl.style.display = 'block'; return; }
+        if (!currentPw) { errEl.innerText = '請輸入目前密碼以確認修改！'; errEl.style.display = 'block'; return; }
+        if (currentPw !== currentUser.password) { errEl.innerText = '目前密碼不正確，請再試一次。'; errEl.style.display = 'block'; return; }
+        if (newPw) {
+            if (newPw.length < 6) { errEl.innerText = '新密碼至少需要 6 個字元！'; errEl.style.display = 'block'; return; }
+            if (newPw !== confirmPw) { errEl.innerText = '兩次輸入的新密碼不一致！'; errEl.style.display = 'block'; return; }
+        }
+
+        const birth = (birthYear && birthMonth && birthDay) ? `${birthYear}-${String(birthMonth).padStart(2,'0')}-${String(birthDay).padStart(2,'0')}` : '';
+        if (birth) {
+            const d = new Date(birth);
+            if (isNaN(d.getTime()) || d.getMonth() + 1 !== parseInt(birthMonth) || d.getDate() !== parseInt(birthDay)) {
+                errEl.innerText = '生日日期無效，請重新輸入！'; errEl.style.display = 'block'; return;
+            }
+        }
+        currentUser = { ...currentUser, name, email, phone, gender, birth, password: newPw ? newPw : currentUser.password };
+        localStorage.setItem('messy_user', JSON.stringify(currentUser));
+        showToast('會員資料已更新！');
+        errEl.style.display = 'none';
+        document.getElementById('editProfileView').style.display = 'none';
+        updateMemberUI();
+        showLoggedInView();
+    }
+
+    function filterProducts(category) {
+        const cards = document.querySelectorAll('.product-card');
+        cards.forEach(card => {
+            if (category === 'ALL' || card.dataset.category === category) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
 </script>
 </body>
 </html>
