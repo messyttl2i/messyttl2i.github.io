@@ -100,11 +100,11 @@
         <img src="images/S__80977927-.png" alt="Logo" onclick="location.href='index.html'">
     </div>
     <div class="header-right">
-        <div class="icon-btn" onclick="openMemberModal()">
+        <div class="icon-btn" onclick="openMemberModal()" aria-label="會員帳號">
             <span style="font-size:1.1rem;">&#128100;</span>
             <div id="loginDot" class="login-dot"></div>
         </div>
-        <div class="icon-btn" onclick="togglePanel('cart-drawer')">
+        <div class="icon-btn" onclick="togglePanel('cart-drawer')" aria-label="購物車">
             <span style="font-size:1.1rem;">&#128722;</span>
             <span class="cart-count" id="cartCount">0</span>
         </div>
@@ -261,7 +261,12 @@
         }
 
         const stored = JSON.parse(localStorage.getItem('messy_user'));
-        if (stored && stored.email === email && stored.password === password) {
+        if (!stored) {
+            errorEl.innerText = '找不到此帳號，請先註冊。';
+            errorEl.style.display = 'block';
+            return;
+        }
+        if (stored.email === email && stored.password === password) {
             currentUser = stored;
             errorEl.style.display = 'none';
             showToast('登入成功！歡迎回來');
@@ -281,6 +286,14 @@
 
         if(!email || !password) {
             alert("Email 與密碼是必須填寫的！");
+            return;
+        }
+        if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            alert("請輸入有效的 Email 格式！");
+            return;
+        }
+        if(password.length < 6) {
+            alert("密碼至少需要 6 個字元！");
             return;
         }
 
