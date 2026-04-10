@@ -40,6 +40,20 @@
         .panel.active { left: 0; }
         .cart-drawer.active { right: 0; }
 
+        /* 控制側邊欄與購物車頂部的標題區域 */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    /* --- 關鍵調整點 --- */
+    margin-bottom: 20px; /* 您可以修改這個數值，數字越小 HOME 就會越往上提 */
+    
+    font-family: 'Playfair Display', serif;
+    letter-spacing: 1px;
+    font-size: 1.2rem;
+}
+
         /* --- 會員制度系統 --- */
         .member-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 30px; z-index: 1200; display: none; width: 95%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 18px; }
@@ -139,7 +153,6 @@
 <div class="panel sidebar" id="sidebar">
     <div class="panel-header">
         <div>MESSYTT&L2I</div>
-        <i class="fa-solid fa-xmark" style="cursor:pointer" onclick="closeAll()"></i>
     </div>   
     <ul class="nav-list">
         <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a></li>
@@ -174,6 +187,7 @@
 <div class="panel cart-drawer" id="cart-drawer">
     <div class="panel-header">
         <div>YOUR BAG</div>
+        <i class="fa-solid fa-xmark" style="cursor:pointer" onclick="closeAll()"></i>
     </div>
     <div class="cart-items" id="cartItemsList"></div>
     <div class="cart-footer">
