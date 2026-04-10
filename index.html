@@ -104,6 +104,10 @@
         .edit-profile-back { cursor: pointer; font-size: 0.8rem; opacity: 0.6; margin-bottom: 20px; display: inline-block; }
         .edit-profile-back:hover { opacity: 1; }
         .edit-section-title { font-size: 0.75rem; opacity: 0.5; letter-spacing: 2px; text-transform: uppercase; margin: 20px 0 10px; border-top: 1px solid #eee; padding-top: 15px; }
+
+        /* --- 忘記密碼視圖 --- */
+        #forgotPasswordForm { display: none; }
+        #forgotPasswordStep2 { display: none; }
     </style>
 </head>
 <body>
@@ -163,6 +167,23 @@
             <div id="loginError" style="color:red; font-size:0.75rem; margin-bottom:10px; display:none;">Email 或密碼不正確，請再試一次。</div>
             <button class="btn btn-full" onclick="handleLogin()">登入</button>
             <p class="form-toggle">還沒有帳號？<a onclick="showRegisterForm()">立即註冊</a></p>
+            <p class="form-toggle"><a onclick="showForgotPasswordForm()">忘記密碼？</a></p>
+        </div>
+        <div id="forgotPasswordForm">
+            <h3 style="text-align:center; margin-bottom:25px;">忘記密碼</h3>
+            <div id="forgotPasswordStep1">
+                <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="fp_email" placeholder="請輸入您的帳號 Email"></div>
+                <div id="fpEmailError" style="color:red; font-size:0.75rem; margin-bottom:10px; display:none;"></div>
+                <button class="btn btn-full" onclick="handleForgotPasswordStep1()">確認</button>
+            </div>
+            <div id="forgotPasswordStep2">
+                <p style="font-size:0.8rem; opacity:0.6; margin-bottom:15px; text-align:center;">Email 驗證成功！請設定新密碼。</p>
+                <div class="form-group"><label>新密碼(New Password) *</label><input type="password" id="fp_new_pw" placeholder="至少 6 個字元"></div>
+                <div class="form-group"><label>確認新密碼(Confirm) *</label><input type="password" id="fp_confirm_pw" placeholder="再次輸入新密碼"></div>
+                <div id="fpResetError" style="color:red; font-size:0.75rem; margin-bottom:10px; display:none;"></div>
+                <button class="btn btn-full" onclick="handleForgotPasswordStep2()">更新密碼</button>
+            </div>
+            <p class="form-toggle" style="margin-top:15px;"><a onclick="showLoginForm()">&#8592; 返回登入</a></p>
         </div>
     </div>
 
@@ -279,6 +300,7 @@
 
     let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
     let currentUser = JSON.parse(localStorage.getItem('messy_user')) || null;
+    let _fpVerifiedEmail = null;
 
     window.onload = () => { updateCartUI(); updateMemberUI(); };
 
@@ -306,6 +328,7 @@
     function showLoginForm() {
         document.getElementById('registerForm').style.display = 'none';
         document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('forgotPasswordForm').style.display = 'none';
         document.getElementById('loginError').style.display = 'none';
         document.getElementById('login_email').value = '';
         document.getElementById('login_pw').value = '';
@@ -314,6 +337,90 @@
     function showRegisterForm() {
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('registerForm').style.display = 'block';
+        document.getElementById('forgotPasswordForm').style.display = 'none';
+    }
+
+    function showForgotPasswordForm() {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'none';
+        document.getElementById('forgotPasswordForm').style.display = 'block';
+        document.getElementById('forgotPasswordStep1').style.display = 'block';
+        document.getElementById('forgotPasswordStep2').style.display = 'none';
+        document.getElementById('fp_email').value = '';
+        document.getElementById('fpEmailError').style.display = 'none';
+        _fpVerifiedEmail = null;
+    }
+
+    function handleForgotPasswordStep1() {
+        const email = document.getElementById('fp_email').value.trim();
+        const errEl = document.getElementById('fpEmailError');
+        if (!email) {
+            errEl.innerText = '請輸入您的 Email！';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errEl.innerText = '請輸入有效的 Email 格式！';
+            errEl.style.display = 'block';
+            return;
+        }
+        const stored = JSON.parse(localStorage.getItem('messy_user'));
+        if (!stored || stored.email !== email) {
+            errEl.innerText = '此 Email 不存在於系統，請確認後再試。';
+            errEl.style.display = 'block';
+            return;
+        }
+        _fpVerifiedEmail = email;
+        errEl.style.display = 'none';
+        document.getElementById('fp_new_pw').value = '';
+        document.getElementById('fp_confirm_pw').value = '';
+        document.getElementById('fpResetError').style.display = 'none';
+        document.getElementById('forgotPasswordStep1').style.display = 'none';
+        document.getElementById('forgotPasswordStep2').style.display = 'block';
+    }
+
+    function handleForgotPasswordStep2() {
+        const newPw = document.getElementById('fp_new_pw').value;
+        const confirmPw = document.getElementById('fp_confirm_pw').value;
+        const errEl = document.getElementById('fpResetError');
+        if (!newPw) {
+            errEl.innerText = '請輸入新密碼！';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (newPw.length < 6) {
+            errEl.innerText = '密碼至少需要 6 個字元！';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (newPw !== confirmPw) {
+            errEl.innerText = '兩次輸入的密碼不一致！';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (!_fpVerifiedEmail) {
+            errEl.innerText = '發生錯誤，請重新操作。';
+            errEl.style.display = 'block';
+            return;
+        }
+        const stored = JSON.parse(localStorage.getItem('messy_user'));
+        if (!stored || stored.email !== _fpVerifiedEmail) {
+            errEl.innerText = '發生錯誤，請重新操作。';
+            errEl.style.display = 'block';
+            return;
+        }
+        stored.password = newPw;
+        localStorage.setItem('messy_user', JSON.stringify(stored));
+        if (currentUser && currentUser.email === _fpVerifiedEmail) {
+            currentUser = null;
+        }
+        _fpVerifiedEmail = null;
+        showToast('密碼已更新，請重新登入');
+        setTimeout(() => {
+            document.getElementById('forgotPasswordForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('loginError').style.display = 'none';
+        }, 1800);
     }
 
     function handleLogin() {
