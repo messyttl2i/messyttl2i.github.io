@@ -115,10 +115,23 @@
 
 <div class="member-modal" id="memberModal">
     <div id="formView">
-        <h3 style="text-align:center; margin-bottom:25px;">REGISTER:建立你的個人資料！</h3>
-        <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="reg_email" placeholder=""></div>
-        <div class="form-group"><label>密碼(Password)</label><input type="password" id="reg_pw" placeholder=""></div>
-        <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
+        <!-- Register Section -->
+        <div id="registerSection">
+            <h3 style="text-align:center; margin-bottom:25px;">REGISTER: 建立你的個人資料！</h3>
+            <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="reg_email" placeholder=""></div>
+            <div class="form-group"><label>密碼(Password)</label><input type="password" id="reg_pw" placeholder=""></div>
+            <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
+            <p style="text-align:center; margin-top:15px; font-size:0.75rem; opacity:0.6; cursor:pointer;" onclick="showLoginForm()">已有帳號？點此登入</p>
+        </div>
+        <!-- Login Section -->
+        <div id="loginSection" style="display:none;">
+            <h3 style="text-align:center; margin-bottom:25px;">LOGIN: 歡迎回來！</h3>
+            <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="login_email" placeholder=""></div>
+            <div class="form-group"><label>密碼(Password)</label><input type="password" id="login_pw" placeholder=""></div>
+            <p id="loginError" style="color:red; font-size:0.75rem; margin-bottom:10px; display:none;"></p>
+            <button class="btn btn-full" id="loginBtn" onclick="handleLogin()">登入</button>
+            <p style="text-align:center; margin-top:15px; font-size:0.75rem; opacity:0.6; cursor:pointer;" onclick="showRegisterForm()">沒有帳號？點此註冊</p>
+        </div>
     </div>
 
     <div id="loggedInView">
@@ -203,10 +216,10 @@
 
 <script>
     // --- 務必填入您的 PUBLIC KEY ---
-    (function(){ emailjs.init({ publicKey: "m1fvagOxoo5vaDvX1" }); })();
+    try { (function(){ emailjs.init({ publicKey: "m1fvagOxoo5vaDvX1" }); })(); } catch(e) { console.warn("EmailJS not loaded:", e); }
 
     let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
-    let currentUser = JSON.parse(localStorage.getItem('messy_user')) || null;
+    let currentUser = JSON.parse(localStorage.getItem('messy_session')) || null;
 
     window.onload = () => { updateCartUI(); updateMemberUI(); };
 
@@ -228,8 +241,15 @@
         }
     }
 
+    async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     // --- 核心修正： handleRegister 邏輯 ---
-    function handleRegister() {
+    async function handleRegister() {
         const email = document.getElementById('reg_email').value;
         const password = document.getElementById('reg_pw').value;
         const btn = document.getElementById('submitBtn');
@@ -242,24 +262,24 @@
         btn.innerText = "正在傳送見面禮...";
         btn.disabled = true;
 
-        // 嘗試傳送信件，不論成功或失敗，2秒後都強制登入並跳轉
-        emailjs.send("service_pzf7lvt", "template_lsph3zp", { user_name: email, user_email: email })
-        .then(() => {
-            console.log("Email sent successfully");
-            completeLogin(email, password);
-        })
-        .catch((err) => {
-            console.error("Email failed, but logging in...", err);
-            completeLogin(email, password); // 即使失敗也讓使用者能登入
-        });
+        const passwordHash = await hashPassword(password);
+
+        // 嘗試傳送信件，不論成功或失敗，都強制登入
+        if (typeof emailjs !== 'undefined') {
+            emailjs.send("service_pzf7lvt", "template_lsph3zp", { user_name: email, user_email: email })
+            .then(() => { console.log("Email sent successfully"); completeRegister(email, passwordHash); })
+            .catch((err) => { console.error("Email failed, but logging in...", err); completeRegister(email, passwordHash); });
+        } else {
+            completeRegister(email, passwordHash);
+        }
     }
 
-    function completeLogin(email, password) {
-        currentUser = { email: email, password: password };
-        localStorage.setItem('messy_user', JSON.stringify(currentUser));
+    function completeRegister(email, passwordHash) {
+        localStorage.setItem('messy_user', JSON.stringify({ email, passwordHash })); // persist account credentials
+        currentUser = { email };
+        localStorage.setItem('messy_session', JSON.stringify(currentUser)); // persist active session (email only)
         showToast("註冊成功！歡迎加入");
         updateMemberUI();
-        // 如果想讓使用者看到成功訊息，可以不關閉彈窗；或 1.5 秒後關閉
         setTimeout(() => closeAll(), 1500);
         // 重置表單
         document.getElementById('reg_email').value = '';
@@ -269,7 +289,7 @@
     }
 
     function handleLogout() {
-        localStorage.removeItem('messy_user');
+        localStorage.removeItem('messy_session'); // only clear session, keep account credentials
         currentUser = null;
         updateMemberUI();
         showToast("已成功登出");
@@ -293,6 +313,50 @@
         });
         count.innerText = totalCount; total.innerText = `NT$ ${totalPrice.toLocaleString()}`;
     }
+    function showLoginForm() {
+        document.getElementById('registerSection').style.display = 'none';
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('login_email').value = '';
+        document.getElementById('login_pw').value = '';
+    }
+
+    function showRegisterForm() {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('registerSection').style.display = 'block';
+    }
+
+    async function handleLogin() {
+        const email = document.getElementById('login_email').value;
+        const password = document.getElementById('login_pw').value;
+        const errorEl = document.getElementById('loginError');
+
+        if (!email || !password) {
+            errorEl.innerText = 'Email 與密碼是必須填寫的！';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        const storedAccount = JSON.parse(localStorage.getItem('messy_user'));
+        const inputHash = await hashPassword(password);
+        if (!storedAccount || storedAccount.email !== email || storedAccount.passwordHash !== inputHash) {
+            errorEl.innerText = '帳號或密碼錯誤，請再試一次';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        errorEl.style.display = 'none';
+        currentUser = { email };
+        localStorage.setItem('messy_session', JSON.stringify(currentUser)); // session stores email only
+        showToast('登入成功！歡迎回來');
+        updateMemberUI();
+        setTimeout(() => closeAll(), 1500);
+    }
+
     let autoplay;
     function startAutoplay(el) { autoplay = setInterval(() => { el.scrollLeft += el.offsetWidth; if(el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0; }, 1200); }
-    function stopAutoplay(el) { clearInterval(auto
+    function stopAutoplay(el) { clearInterval(autoplay); }
+    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 2500); }
+</script>
+</body>
+</html>
