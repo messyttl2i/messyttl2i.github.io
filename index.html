@@ -117,8 +117,27 @@
     <div id="formView">
         <div id="registerForm">
             <h3 style="text-align:center; margin-bottom:25px;">REGISTER:建立你的個人資料！</h3>
-            <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="reg_email" placeholder=""></div>
-            <div class="form-group"><label>密碼(Password)</label><input type="password" id="reg_pw" placeholder=""></div>
+            <div class="form-group"><label>姓名(Name) *</label><input type="text" id="reg_name" placeholder=""></div>
+            <div class="form-group"><label>電子郵件(Email) *</label><input type="email" id="reg_email" placeholder=""></div>
+            <div class="form-group"><label>密碼(Password) *</label><input type="password" id="reg_pw" placeholder=""></div>
+            <div class="form-group"><label>電話(Phone)</label><input type="tel" id="reg_phone" placeholder=""></div>
+            <div class="form-group">
+                <label>性別(Gender)</label>
+                <select id="reg_gender">
+                    <option value="">-- 請選擇 --</option>
+                    <option value="male">男 Male</option>
+                    <option value="female">女 Female</option>
+                    <option value="other">其他 Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>生日(Birth)</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="number" id="reg_birth_year" placeholder="年" min="1900" max="2099" style="flex:2;">
+                    <input type="number" id="reg_birth_month" placeholder="月" min="1" max="12" style="flex:1;">
+                    <input type="number" id="reg_birth_day" placeholder="日" min="1" max="31" style="flex:1;">
+                </div>
+            </div>
             <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
             <p class="form-toggle">已有帳號？<a onclick="showLoginForm()">立即登入</a></p>
         </div>
@@ -136,7 +155,7 @@
         <div class="member-profile-header">
             <div style="background:#000; color:#fff; font-size:0.6rem; display:inline-block; padding:2px 8px; border-radius:20px; margin-bottom:10px;">MEMBER</div>
             <h2 id="displayUserName"></h2>
-            <p id="displayUserEmail" style="font-size: 0.7rem; opacity: 0.5;">Email</p>
+            <p id="displayUserEmail" style="font-size: 0.7rem; opacity: 0.5;"></p>
         </div>
         <div class="member-menu">
             <div class="member-menu-item" onclick="showToast('會員資料載入中...')"><span>會員資料 Membership</span><span>&#8250;</span></div>
@@ -226,7 +245,7 @@
             document.getElementById('formView').style.display = 'none';
             document.getElementById('loggedInView').style.display = 'block';
             document.getElementById('loginDot').style.display = 'block';
-            document.getElementById('displayUserName').innerText = currentUser.email;
+            document.getElementById('displayUserName').innerText = currentUser.name || currentUser.email;
             document.getElementById('displayUserEmail').innerText = currentUser.email;
         } else {
             document.getElementById('formView').style.display = 'block';
@@ -280,12 +299,18 @@
 
     // --- handleRegister 邏輯 ---
     function handleRegister() {
+        const name = document.getElementById('reg_name').value.trim();
         const email = document.getElementById('reg_email').value.trim();
         const password = document.getElementById('reg_pw').value;
+        const phone = document.getElementById('reg_phone').value.trim();
+        const gender = document.getElementById('reg_gender').value;
+        const birthYear = document.getElementById('reg_birth_year').value.trim();
+        const birthMonth = document.getElementById('reg_birth_month').value.trim();
+        const birthDay = document.getElementById('reg_birth_day').value.trim();
         const btn = document.getElementById('submitBtn');
 
-        if(!email || !password) {
-            alert("Email 與密碼是必須填寫的！");
+        if(!name || !email || !password) {
+            alert("姓名、Email 與密碼是必須填寫的！");
             return;
         }
         if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -297,19 +322,27 @@
             return;
         }
 
+        const birth = (birthYear && birthMonth && birthDay) ? `${birthYear}-${String(birthMonth).padStart(2,'0')}-${String(birthDay).padStart(2,'0')}` : '';
+
         btn.innerText = "正在建立帳號...";
         btn.disabled = true;
-        completeLogin(email, password);
+        completeLogin(name, email, password, phone, gender, birth);
     }
 
-    function completeLogin(email, password) {
-        currentUser = { email: email, password: password };
+    function completeLogin(name, email, password, phone, gender, birth) {
+        currentUser = { name, email, password, phone, gender, birth };
         localStorage.setItem('messy_user', JSON.stringify(currentUser));
         showToast("註冊成功！歡迎加入");
         updateMemberUI();
         setTimeout(() => closeAll(), 1500);
+        document.getElementById('reg_name').value = '';
         document.getElementById('reg_email').value = '';
         document.getElementById('reg_pw').value = '';
+        document.getElementById('reg_phone').value = '';
+        document.getElementById('reg_gender').value = '';
+        document.getElementById('reg_birth_year').value = '';
+        document.getElementById('reg_birth_month').value = '';
+        document.getElementById('reg_birth_day').value = '';
         document.getElementById('submitBtn').innerText = '立即加入！';
         document.getElementById('submitBtn').disabled = false;
     }
