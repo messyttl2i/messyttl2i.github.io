@@ -41,18 +41,15 @@
         .cart-drawer.active { right: 0; }
 
         /* 控制側邊欄與購物車頂部的標題區域 */
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    /* --- 關鍵調整點 --- */
-    margin-bottom: 30px; /* 您可以修改這個數值，數字越小 HOME 就會越往上提 */
-    
-    font-family: 'Playfair Display', serif;
-    letter-spacing: 1px;
-    font-size: 1.2rem;
-}
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 1px;
+            font-size: 1.2rem;
+        }
 
         /* --- 會員制度系統 --- */
         .member-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 30px; z-index: 1200; display: none; width: 95%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
@@ -83,8 +80,6 @@
         .image-box::-webkit-scrollbar { display: none; }
         .image-box img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
       
-
-
         /* 按鈕樣式 */
         .btn { width: 100%; padding: 12px 0; font-size: 0.7rem; border: 1px solid var(--text-amethyst); cursor: pointer; background: none; color: var(--text-amethyst); text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
         .btn:hover { background: var(--text-amethyst); color: #fff; }
@@ -121,16 +116,8 @@
 <div class="member-modal" id="memberModal">
     <div id="formView">
         <h3 style="text-align:center; margin-bottom:25px;">REGISTER:建立你的個人資料！</h3>
-        <div class="form-group"><label>用戶名(Account)</label><input type="text" id="reg_name" placeholder=""></div>
-        <div class="form-group"><label>密碼(Password)</label><input type="password" id="reg_pw" placeholder=""></div>
         <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="reg_email" placeholder=""></div>
-        <div class="form-group">
-            <label>生日日期(Birth)</label>
-            <div style="display:flex; gap:10px;"><input type="number" id="reg_yy" placeholder="年"><input type="number" id="reg_mm" placeholder="月"><input type="number" id="reg_dd" placeholder="日"></div>
-        </div>
-        <div class="form-group"><label>性別(Gentle)</label><select id="reg_gender"><option>女</option><option>男</option></select></div>
-        <div class="form-group"><label>聯絡電話(Tel)</label><input type="tel" id="reg_phone" placeholder=""></div>
-        <div class="form-group"><label>地址(Adress)</label><input type="text" id="reg_address" placeholder=""></div>
+        <div class="form-group"><label>密碼(Password)</label><input type="password" id="reg_pw" placeholder=""></div>
         <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
     </div>
 
@@ -232,7 +219,7 @@
             document.getElementById('formView').style.display = 'none';
             document.getElementById('loggedInView').style.display = 'block';
             document.getElementById('loginDot').style.display = 'block';
-            document.getElementById('displayUserName').innerText = currentUser.name;
+            document.getElementById('displayUserName').innerText = currentUser.email;
             document.getElementById('displayUserEmail').innerText = currentUser.email;
         } else {
             document.getElementById('formView').style.display = 'block';
@@ -243,12 +230,12 @@
 
     // --- 核心修正： handleRegister 邏輯 ---
     function handleRegister() {
-        const name = document.getElementById('reg_name').value;
         const email = document.getElementById('reg_email').value;
+        const password = document.getElementById('reg_pw').value;
         const btn = document.getElementById('submitBtn');
 
-        if(!name || !email) {
-            alert("姓名與 Email 是必須填寫的！");
+        if(!email || !password) {
+            alert("Email 與密碼是必須填寫的！");
             return;
         }
 
@@ -256,24 +243,29 @@
         btn.disabled = true;
 
         // 嘗試傳送信件，不論成功或失敗，2秒後都強制登入並跳轉
-        emailjs.send("service_pzf7lvt", "template_lsph3zp", { user_name: name, user_email: email })
+        emailjs.send("service_pzf7lvt", "template_lsph3zp", { user_name: email, user_email: email })
         .then(() => {
             console.log("Email sent successfully");
-            completeLogin(name, email);
+            completeLogin(email, password);
         })
         .catch((err) => {
             console.error("Email failed, but logging in...", err);
-            completeLogin(name, email); // 即使失敗也讓使用者能登入
+            completeLogin(email, password); // 即使失敗也讓使用者能登入
         });
     }
 
-    function completeLogin(name, email) {
-        currentUser = { name: name, email: email };
+    function completeLogin(email, password) {
+        currentUser = { email: email, password: password };
         localStorage.setItem('messy_user', JSON.stringify(currentUser));
         showToast("註冊成功！歡迎加入");
         updateMemberUI();
         // 如果想讓使用者看到成功訊息，可以不關閉彈窗；或 1.5 秒後關閉
         setTimeout(() => closeAll(), 1500);
+        // 重置表單
+        document.getElementById('reg_email').value = '';
+        document.getElementById('reg_pw').value = '';
+        document.getElementById('submitBtn').innerText = '立即加入！';
+        document.getElementById('submitBtn').disabled = false;
     }
 
     function handleLogout() {
@@ -303,9 +295,4 @@
     }
     let autoplay;
     function startAutoplay(el) { autoplay = setInterval(() => { el.scrollLeft += el.offsetWidth; if(el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0; }, 1200); }
-    function stopAutoplay(el) { clearInterval(autoplay); el.scrollLeft = 0; }
-    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = '1'; setTimeout(() => { t.style.opacity = '0'; }, 2500); }
-</script>
-
-</body>
-</html>
+    function stopAutoplay(el) { clearInterval(auto
