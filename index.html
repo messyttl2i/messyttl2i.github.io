@@ -241,11 +241,22 @@
         }
     }
 
-    async function hashPassword(password) {
+    async function hashPassword(password, salt) {
         const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw', encoder.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
+        );
+        const hashBuffer = await crypto.subtle.deriveBits(
+            { name: 'PBKDF2', salt: encoder.encode(salt), iterations: 100000, hash: 'SHA-256' },
+            keyMaterial, 256
+        );
         return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function generateSalt() {
+        const array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     // --- 核心修正： handleRegister 邏輯 ---
@@ -262,20 +273,21 @@
         btn.innerText = "正在傳送見面禮...";
         btn.disabled = true;
 
-        const passwordHash = await hashPassword(password);
+        const salt = generateSalt();
+        const passwordHash = await hashPassword(password, salt);
 
         // 嘗試傳送信件，不論成功或失敗，都強制登入
         if (typeof emailjs !== 'undefined') {
             emailjs.send("service_pzf7lvt", "template_lsph3zp", { user_name: email, user_email: email })
-            .then(() => { console.log("Email sent successfully"); completeRegister(email, passwordHash); })
-            .catch((err) => { console.error("Email failed, but logging in...", err); completeRegister(email, passwordHash); });
+            .then(() => { console.log("Email sent successfully"); completeRegister(email, passwordHash, salt); })
+            .catch((err) => { console.error("Email failed, but logging in...", err); completeRegister(email, passwordHash, salt); });
         } else {
-            completeRegister(email, passwordHash);
+            completeRegister(email, passwordHash, salt);
         }
     }
 
-    function completeRegister(email, passwordHash) {
-        localStorage.setItem('messy_user', JSON.stringify({ email, passwordHash })); // persist account credentials
+    function completeRegister(email, passwordHash, salt) {
+        localStorage.setItem('messy_user', JSON.stringify({ email, passwordHash, salt })); // persist account credentials
         currentUser = { email };
         localStorage.setItem('messy_session', JSON.stringify(currentUser)); // persist active session (email only)
         showToast("註冊成功！歡迎加入");
@@ -338,7 +350,10 @@
         }
 
         const storedAccount = JSON.parse(localStorage.getItem('messy_user'));
-        const inputHash = await hashPassword(password);
+        // Always hash (using stored salt or a dummy) to prevent timing/enumeration attacks
+        const salt = storedAccount ? storedAccount.salt : 'dummy-salt-prevent-enumeration';
+        const inputHash = await hashPassword(password, salt);
+
         if (!storedAccount || storedAccount.email !== email || storedAccount.passwordHash !== inputHash) {
             errorEl.innerText = '帳號或密碼錯誤，請再試一次';
             errorEl.style.display = 'block';
