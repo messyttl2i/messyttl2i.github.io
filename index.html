@@ -34,7 +34,7 @@
 
         /* --- 面板系統 --- */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.15); display: none; z-index: 1100; backdrop-filter: blur(2px); }
-        .panel { position: fixed; top: 0; height: 100%; background: rgba(240, 243, 247, 0.98); transition: 0.4s ease; z-index: 1101; padding: 40px 25px; display: flex; flex-direction: column; margin-bottom: 40px;}
+        .panel { position: fixed; top: 0; height: 100%; background: rgba(240, 243, 247, 0.98); transition: 0.4s ease; z-index: 1101; padding: 40px 25px; display: flex; flex-direction: column; }
         .sidebar { left: -320px; width: var(--sidebar-width); }
         .cart-drawer { right: -350px; width: 350px; }
         .panel.active { left: 0; }
@@ -142,7 +142,7 @@
     <div class="panel-header"><div>MESSYTT&L2I</div></i></div>
         </li>
     <ul class="nav-list">
-        <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;">HOME</a></li>
+        <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;margin-bottom: 40px;">HOME</a></li>
         <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
         <li class="nav-item">
             <div class="nav-link" onclick="document.getElementById('m-drop').classList.toggle('show')">ALL MESSYTT <i class="fa-solid fa-chevron-down"></i></div>
