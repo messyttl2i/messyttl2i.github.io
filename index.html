@@ -108,6 +108,9 @@
         /* --- 忘記密碼視圖 --- */
         #forgotPasswordForm { display: none; }
         #forgotPasswordStep2 { display: none; }
+
+        /* --- 唯讀欄位 --- */
+        .readonly-input { background: #ececec !important; color: #999 !important; cursor: not-allowed !important; }
     </style>
 </head>
 <body>
@@ -204,7 +207,7 @@
         <span class="edit-profile-back" onclick="showLoggedInView()">&#8592; 返回會員頁面</span>
         <h3 style="text-align:center; margin-bottom:20px;">修改會員資料</h3>
         <div class="form-group"><label>姓名(Name)</label><input type="text" id="edit_name" placeholder=""></div>
-        <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="edit_email" placeholder=""></div>
+        <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="edit_email" placeholder="" readonly class="readonly-input"></div>
         <div class="form-group"><label>電話(Phone)</label><input type="tel" id="edit_phone" placeholder=""></div>
         <div class="form-group">
             <label>性別(Gender)</label>
@@ -299,10 +302,44 @@
 <script>
 
     let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
-    let currentUser = JSON.parse(localStorage.getItem('messy_user')) || null;
+    let messy_users = JSON.parse(localStorage.getItem('messy_users')) || {};
+    let currentUser = null;
     let _fpVerifiedEmail = null;
 
+    // Session lives in sessionStorage — cleared when browser is closed (manual login required)
+    (function initSession() {
+        const session = JSON.parse(sessionStorage.getItem('messy_session'));
+        if (session && session.email && messy_users[session.email]) {
+            currentUser = messy_users[session.email];
+        }
+    })();
+
     window.onload = () => { updateCartUI(); updateMemberUI(); };
+
+    // --- PBKDF2 Password Helpers ---
+    function generateSalt() {
+        const arr = new Uint8Array(16);
+        crypto.getRandomValues(arr);
+        return btoa(String.fromCharCode(...arr));
+    }
+
+    async function hashPassword(password, salt) {
+        const encoder = new TextEncoder();
+        const saltBytes = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw', encoder.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
+        );
+        const bits = await crypto.subtle.deriveBits(
+            { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+            keyMaterial, 256
+        );
+        return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function verifyPassword(password, salt, storedHash) {
+        const hash = await hashPassword(password, salt);
+        return hash === storedHash;
+    }
 
     function togglePanel(id) { closeAll(); document.getElementById(id).classList.add('active'); document.getElementById('overlay').style.display='block'; }
     function closeAll() { document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById('memberModal').style.display='none'; document.getElementById('overlay').style.display='none'; }
@@ -364,9 +401,9 @@
             errEl.style.display = 'block';
             return;
         }
-        const stored = JSON.parse(localStorage.getItem('messy_user'));
-        if (!stored || stored.email !== email) {
-            errEl.innerText = '此 Email 不存在於系統，請確認後再試。';
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        if (!users[email]) {
+            errEl.innerText = '此信箱尚未註冊';
             errEl.style.display = 'block';
             return;
         }
@@ -379,7 +416,7 @@
         document.getElementById('forgotPasswordStep2').style.display = 'block';
     }
 
-    function handleForgotPasswordStep2() {
+    async function handleForgotPasswordStep2() {
         const newPw = document.getElementById('fp_new_pw').value;
         const confirmPw = document.getElementById('fp_confirm_pw').value;
         const errEl = document.getElementById('fpResetError');
@@ -403,27 +440,36 @@
             errEl.style.display = 'block';
             return;
         }
-        const stored = JSON.parse(localStorage.getItem('messy_user'));
-        if (!stored || stored.email !== _fpVerifiedEmail) {
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        if (!users[_fpVerifiedEmail]) {
             errEl.innerText = '發生錯誤，請重新操作。';
             errEl.style.display = 'block';
             return;
         }
-        stored.password = newPw;
-        localStorage.setItem('messy_user', JSON.stringify(stored));
-        if (currentUser && currentUser.email === _fpVerifiedEmail) {
-            currentUser = null;
+        try {
+            const salt = generateSalt();
+            const passwordHash = await hashPassword(newPw, salt);
+            users[_fpVerifiedEmail] = { ...users[_fpVerifiedEmail], passwordHash, salt };
+            localStorage.setItem('messy_users', JSON.stringify(users));
+            messy_users = users;
+            if (currentUser && currentUser.email === _fpVerifiedEmail) {
+                sessionStorage.removeItem('messy_session');
+                currentUser = null;
+            }
+            _fpVerifiedEmail = null;
+            showToast('密碼已更新，請重新登入');
+            setTimeout(() => {
+                document.getElementById('forgotPasswordForm').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('loginError').style.display = 'none';
+            }, 1800);
+        } catch(e) {
+            errEl.innerText = '更新失敗，請再試一次。';
+            errEl.style.display = 'block';
         }
-        _fpVerifiedEmail = null;
-        showToast('密碼已更新，請重新登入');
-        setTimeout(() => {
-            document.getElementById('forgotPasswordForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('loginError').style.display = 'none';
-        }, 1800);
     }
 
-    function handleLogin() {
+    async function handleLogin() {
         const email = document.getElementById('login_email').value.trim();
         const password = document.getElementById('login_pw').value;
         const errorEl = document.getElementById('loginError');
@@ -434,26 +480,37 @@
             return;
         }
 
-        const stored = JSON.parse(localStorage.getItem('messy_user'));
-        if (!stored) {
-            errorEl.innerText = '找不到此帳號，請先註冊。';
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        const userData = users[email];
+
+        if (!userData) {
+            errorEl.innerText = 'Email 或密碼不正確，請再試一次。';
             errorEl.style.display = 'block';
             return;
         }
-        if (stored.email === email && stored.password === password) {
-            currentUser = stored;
-            errorEl.style.display = 'none';
-            showToast('登入成功！歡迎回來');
-            updateMemberUI();
-            setTimeout(() => closeAll(), 1500);
-        } else {
-            errorEl.innerText = 'Email 或密碼不正確，請再試一次。';
+
+        try {
+            const isValid = await verifyPassword(password, userData.salt, userData.passwordHash);
+            if (isValid) {
+                currentUser = userData;
+                messy_users = users;
+                sessionStorage.setItem('messy_session', JSON.stringify({ email }));
+                errorEl.style.display = 'none';
+                showToast('登入成功！歡迎回來');
+                updateMemberUI();
+                setTimeout(() => closeAll(), 1500);
+            } else {
+                errorEl.innerText = 'Email 或密碼不正確，請再試一次。';
+                errorEl.style.display = 'block';
+            }
+        } catch(e) {
+            errorEl.innerText = '登入失敗，請再試一次。';
             errorEl.style.display = 'block';
         }
     }
 
     // --- handleRegister 邏輯 ---
-    function handleRegister() {
+    async function handleRegister() {
         const name = document.getElementById('reg_name').value.trim();
         const email = document.getElementById('reg_email').value.trim();
         const password = document.getElementById('reg_pw').value;
@@ -477,33 +534,47 @@
             return;
         }
 
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        if (users[email]) {
+            alert("此信箱已存在");
+            return;
+        }
+
         const birth = (birthYear && birthMonth && birthDay) ? `${birthYear}-${String(birthMonth).padStart(2,'0')}-${String(birthDay).padStart(2,'0')}` : '';
 
         btn.innerText = "正在建立帳號...";
         btn.disabled = true;
-        completeLogin(name, email, password, phone, gender, birth);
-    }
 
-    function completeLogin(name, email, password, phone, gender, birth) {
-        currentUser = { name, email, password, phone, gender, birth };
-        localStorage.setItem('messy_user', JSON.stringify(currentUser));
-        showToast("註冊成功！歡迎加入");
-        updateMemberUI();
-        setTimeout(() => closeAll(), 1500);
-        document.getElementById('reg_name').value = '';
-        document.getElementById('reg_email').value = '';
-        document.getElementById('reg_pw').value = '';
-        document.getElementById('reg_phone').value = '';
-        document.getElementById('reg_gender').value = '';
-        document.getElementById('reg_birth_year').value = '';
-        document.getElementById('reg_birth_month').value = '';
-        document.getElementById('reg_birth_day').value = '';
-        document.getElementById('submitBtn').innerText = '立即加入！';
-        document.getElementById('submitBtn').disabled = false;
+        try {
+            const salt = generateSalt();
+            const passwordHash = await hashPassword(password, salt);
+            const userData = { name, email, passwordHash, salt, phone, gender, birth };
+            users[email] = userData;
+            localStorage.setItem('messy_users', JSON.stringify(users));
+            messy_users = users;
+            currentUser = userData;
+            sessionStorage.setItem('messy_session', JSON.stringify({ email }));
+            showToast("註冊成功！歡迎加入");
+            updateMemberUI();
+            setTimeout(() => closeAll(), 1500);
+            document.getElementById('reg_name').value = '';
+            document.getElementById('reg_email').value = '';
+            document.getElementById('reg_pw').value = '';
+            document.getElementById('reg_phone').value = '';
+            document.getElementById('reg_gender').value = '';
+            document.getElementById('reg_birth_year').value = '';
+            document.getElementById('reg_birth_month').value = '';
+            document.getElementById('reg_birth_day').value = '';
+        } catch(e) {
+            alert("註冊失敗，請再試一次。");
+        } finally {
+            btn.innerText = '立即加入！';
+            btn.disabled = false;
+        }
     }
 
     function handleLogout() {
-        localStorage.removeItem('messy_user');
+        sessionStorage.removeItem('messy_session');
         currentUser = null;
         updateMemberUI();
         showToast("已成功登出");
@@ -586,10 +657,9 @@
         document.getElementById('editProfileView').style.display = 'block';
     }
 
-    function saveProfileChanges() {
+    async function saveProfileChanges() {
         const errEl = document.getElementById('editProfileError');
         const name = document.getElementById('edit_name').value.trim();
-        const email = document.getElementById('edit_email').value.trim();
         const phone = document.getElementById('edit_phone').value.trim();
         const gender = document.getElementById('edit_gender').value;
         const birthYear = document.getElementById('edit_birth_year').value.trim();
@@ -599,10 +669,16 @@
         const confirmPw = document.getElementById('edit_confirm_pw').value;
         const currentPw = document.getElementById('edit_current_pw').value;
 
-        if (!name || !email) { errEl.innerText = '姓名與 Email 為必填！'; errEl.style.display = 'block'; return; }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.innerText = '請輸入有效的 Email 格式！'; errEl.style.display = 'block'; return; }
+        if (!name) { errEl.innerText = '姓名為必填！'; errEl.style.display = 'block'; return; }
         if (!currentPw) { errEl.innerText = '請輸入目前密碼以確認修改！'; errEl.style.display = 'block'; return; }
-        if (currentPw !== currentUser.password) { errEl.innerText = '目前密碼不正確，請再試一次。'; errEl.style.display = 'block'; return; }
+
+        try {
+            const isValid = await verifyPassword(currentPw, currentUser.salt, currentUser.passwordHash);
+            if (!isValid) { errEl.innerText = '目前密碼不正確，請再試一次。'; errEl.style.display = 'block'; return; }
+        } catch(e) {
+            errEl.innerText = '驗證失敗，請再試一次。'; errEl.style.display = 'block'; return;
+        }
+
         if (newPw) {
             if (newPw.length < 6) { errEl.innerText = '新密碼至少需要 6 個字元！'; errEl.style.display = 'block'; return; }
             if (newPw !== confirmPw) { errEl.innerText = '兩次輸入的新密碼不一致！'; errEl.style.display = 'block'; return; }
@@ -615,8 +691,24 @@
                 errEl.innerText = '生日日期無效，請重新輸入！'; errEl.style.display = 'block'; return;
             }
         }
-        currentUser = { ...currentUser, name, email, phone, gender, birth, password: newPw ? newPw : currentUser.password };
-        localStorage.setItem('messy_user', JSON.stringify(currentUser));
+
+        let updatedUser = { ...currentUser, name, phone, gender, birth };
+        if (newPw) {
+            try {
+                const salt = generateSalt();
+                const passwordHash = await hashPassword(newPw, salt);
+                updatedUser = { ...updatedUser, passwordHash, salt };
+            } catch(e) {
+                errEl.innerText = '密碼更新失敗，請再試一次。'; errEl.style.display = 'block'; return;
+            }
+        }
+
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        users[currentUser.email] = updatedUser;
+        localStorage.setItem('messy_users', JSON.stringify(users));
+        messy_users = users;
+        currentUser = updatedUser;
+        sessionStorage.setItem('messy_session', JSON.stringify({ email: currentUser.email }));
         showToast('會員資料已更新！');
         errEl.style.display = 'none';
         document.getElementById('editProfileView').style.display = 'none';
