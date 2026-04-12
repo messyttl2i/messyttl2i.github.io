@@ -641,9 +641,9 @@
             // 發送歡迎信（EmailJS）
             try {
                 await emailjs.send('service_pzf7lvt', 'template_vkq007u', {
-                    to_name: name,
-                    to_email: email,
-                    coupon_amount: '50',
+                    user_name: name,
+                    user_email: email,
+                    coupon_amount: 50,
                     site_url: 'https://messyttl2i.github.io/'
                 });
                 showToast("註冊成功！歡迎信已發送");
