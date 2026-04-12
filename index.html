@@ -217,7 +217,7 @@
             <div style="background:#000; color:#fff; font-size:0.6rem; display:inline-block; padding:2px 8px; border-radius:20px; margin-bottom:10px;">MEMBER</div>
             <h2 id="displayUserName"></h2>
             <p id="displayUserEmail" style="font-size: 0.7rem; opacity: 0.5;"></p>
-            <div id="couponBalanceDisplay" class="coupon-balance-badge" style="display:none;">購物金：NT$ <span id="couponBalanceAmount">0</span></div>
+            <div id="couponBalanceDisplay" class="coupon-balance-badge" style="display:none;">🎁 購物金：NT$ <span id="couponBalanceAmount">0</span></div>
         </div>
         <div class="member-menu">
             <div class="member-menu-item" onclick="handleEditProfile()"><span>會員資料 Membership</span><span>&#8250;</span></div>
@@ -560,6 +560,11 @@
         try {
             const isValid = await verifyPassword(password, userData.salt, userData.passwordHash);
             if (isValid) {
+                if (userData.couponBalance == null) {
+                    userData.couponBalance = 0;
+                    users[email] = userData;
+                    localStorage.setItem('messy_users', JSON.stringify(users));
+                }
                 currentUser = userData;
                 messy_users = users;
                 sessionStorage.setItem('messy_session', JSON.stringify({ email }));
@@ -622,7 +627,6 @@
             messy_users = users;
             currentUser = userData;
             sessionStorage.setItem('messy_session', JSON.stringify({ email }));
-            showToast("註冊成功！歡迎加入，贈送 NT$50 購物金");
             updateMemberUI();
             setTimeout(() => closeAll(), 1500);
             document.getElementById('reg_name').value = '';
@@ -642,8 +646,9 @@
                     coupon_amount: '50',
                     site_url: 'https://messyttl2i.github.io/'
                 });
+                showToast("註冊成功！歡迎信已發送");
             } catch(mailErr) {
-                // 歡迎信發送失敗不影響主要流程
+                showToast("註冊成功，但歡迎信發送失敗（請聯絡客服）");
                 console.warn('歡迎信發送失敗:', mailErr);
             }
         } catch(e) {
