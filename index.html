@@ -306,14 +306,14 @@
 <!-- 商品主區域 -->
 <div class="main-container" id="mainContainer">
     <div class="product-grid">
-        <div class="product-card" data-category="CLOTHING">
-            <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)" onclick="showProductDetail('1', 'Cyber Butterfly Necklace', 2580, ['images/S__81002508_0.jpg','images/S__81002509_0.jpg','images/S__81002510_0.jpg','images/S__81002511_0.jpg'])">
+        <div class="product-card" data-category="CLOTHING" data-product-id="1">
+            <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)" onclick="showProductDetail('1')">
                 <img src="images/S__81002508_0.jpg"><img src="images/S__81002509_0.jpg">
             </div>
             <div class="product-info">
-                <div class="product-name"><a class="product-name-link" onclick="showProductDetail('1', 'Cyber Butterfly Necklace', 2580, ['images/S__81002508_0.jpg','images/S__81002509_0.jpg','images/S__81002510_0.jpg','images/S__81002511_0.jpg'])">Cyber Butterfly Necklace</a></div>
+                <div class="product-name"><a class="product-name-link" onclick="showProductDetail('1')">Cyber Butterfly Necklace</a></div>
                 <div class="product-price">NT$ 2,580</div>
-                <button class="btn btn-full" onclick="addToCart('1', 'Cyber Butterfly Necklace', 2580, 'images/S__81002508_0.jpg', '')">Add to Bag</button>
+                <button class="btn btn-full" onclick="addToCartById('1', '')">Add to Bag</button>
             </div>
         </div>
     </div>
@@ -350,6 +350,20 @@
 <script>
     // EmailJS 初始化
     try { emailjs.init('m1fvagOxoo5vaDvX1'); } catch(e) {}
+
+    // 商品資料
+    const PRODUCTS = {
+        '1': {
+            name: 'Cyber Butterfly Necklace',
+            price: 2580,
+            images: [
+                'images/S__81002508_0.jpg',
+                'images/S__81002509_0.jpg',
+                'images/S__81002510_0.jpg',
+                'images/S__81002511_0.jpg'
+            ]
+        }
+    };
 
     let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
     let messy_users = JSON.parse(localStorage.getItem('messy_users')) || {};
@@ -796,8 +810,17 @@
         });
     }
 
+    function addToCartById(id, size) {
+        const product = PRODUCTS[id];
+        if (!product) return;
+        addToCart(id, product.name, product.price, product.images[0], size);
+    }
+
     // --- 商品詳情頁 ---
-    function showProductDetail(id, name, price, images) {
+    function showProductDetail(id) {
+        const product = PRODUCTS[id];
+        if (!product) return;
+        const { name, price, images } = product;
         _currentDetailProduct = { id, name, price, images };
         document.getElementById('detailName').innerText = name;
         document.getElementById('detailPrice').innerText = `NT$ ${price.toLocaleString()}`;
