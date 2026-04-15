@@ -607,7 +607,7 @@
             return;
         }
 
-        const users = JSON.parse(localStorage.getItem('')) || {};
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
         if (users[email]) {
             alert("此信箱已存在");
             return;
