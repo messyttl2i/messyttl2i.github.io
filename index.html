@@ -608,7 +608,9 @@
         }
 
         const users = JSON.parse(localStorage.getItem('messy_users')) || {};
-        
+        if (users[]) {
+            alert("此信箱已存在");
+            return;
         }
 
         const birth = (birthYear && birthMonth && birthDay) ? `${birthYear}-${String(birthMonth).padStart(2,'0')}-${String(birthDay).padStart(2,'0')}` : '';
