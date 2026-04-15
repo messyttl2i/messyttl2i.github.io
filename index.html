@@ -470,7 +470,10 @@
             return;
         }
         const users = JSON.parse(localStorage.getItem('messy_users')) || {};
-       
+        if (!users[email]) {
+            errEl.innerText = '此信箱尚未註冊';
+            errEl.style.display = 'block';
+            return;
         }
         _fpVerifiedEmail = email;
         errEl.style.display = 'none';
