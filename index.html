@@ -1135,15 +1135,16 @@
         if (!document.getElementById('checkoutPage')) return;
         saveCheckoutForm();
         const shippingFee = getShippingFee();
-        const shippingLabel = `NT$ ${shippingFee.toLocaleString()}（免運）`;
+        const safeShippingFee = Number(shippingFee) || 0;
+        const shippingLabel = `NT$ ${safeShippingFee.toLocaleString()}（免運）`;
         document.getElementById('checkoutShippingFeeLabel').innerText = shippingLabel;
         const itemsTotal = getCartSubtotal();
         const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
         const canUseCoupon = checkoutFormData.useCoupon && balance > 0;
-        const maxCoupon = Math.min(balance, itemsTotal + shippingFee);
+        const maxCoupon = Math.min(balance, itemsTotal + safeShippingFee);
         let couponValue = canUseCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), maxCoupon) : 0;
         document.getElementById('couponUseAmount').value = couponValue;
-        const finalAmount = Math.max(0, itemsTotal + shippingFee - couponValue);
+        const finalAmount = Math.max(0, itemsTotal + safeShippingFee - couponValue);
         const finalLabel = `NT$ ${finalAmount.toLocaleString()}`;
 
         document.getElementById('summaryItemsTotal').innerText = `NT$ ${itemsTotal.toLocaleString()}`;
