@@ -1015,12 +1015,12 @@
 
     function initCheckoutStoreSelectors() {
         const citySelect = document.getElementById('checkoutStoreCity');
-        if (!citySelect || citySelect.dataset.initialized === '1') return;
+        if (!citySelect || citySelect.dataset.initialized === 'true') return;
         const cityOptions = ['<option value="">請選擇縣市</option>'].concat(
             getStoreCityList().map((city) => `<option value="${escapeHtml(city)}">${escapeHtml(city)}</option>`)
         );
         citySelect.innerHTML = cityOptions.join('');
-        citySelect.dataset.initialized = '1';
+        citySelect.dataset.initialized = 'true';
     }
 
     function populateStoreOptions(city, selectedStoreId) {
