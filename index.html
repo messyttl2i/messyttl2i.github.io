@@ -1000,7 +1000,7 @@
             error.style.display = 'block';
             return false;
         }
-        const phoneValid = /^(\+?[0-9\- ]{8,15}|09\d{8})$/.test(checkoutFormData.phone);
+        const phoneValid = /^(\+?\d{8,15}|09\d{8})$/.test(checkoutFormData.phone);
         if (!phoneValid) {
             error.innerText = '電話格式不正確，請重新輸入。';
             error.style.display = 'block';
@@ -1050,7 +1050,9 @@
 
     function makeMerchantTradeNo() {
         const nowPart = Date.now().toString().slice(-10);
-        const randPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        const randomArr = new Uint8Array(3);
+        crypto.getRandomValues(randomArr);
+        const randPart = Array.from(randomArr).map((v) => String(v % 10)).join('');
         return `MSY${nowPart}${randPart}`;
     }
 
@@ -1078,7 +1080,11 @@
 
     async function generateCheckMacValue(params) {
         const sortedKeys = Object.keys(params).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-        const query = sortedKeys.map((key) => `${key}=${params[key]}`).join('&');
+        const query = sortedKeys.map((key) => {
+            const value = String(params[key] ?? '');
+            if (/[&=]/.test(value)) throw new Error('PaymentParamInvalid');
+            return `${key}=${value}`;
+        }).join('&');
         const raw = `HashKey=${ECPAY_CONFIG.hashKey}&${query}&HashIV=${ECPAY_CONFIG.hashIv}`;
         const encoded = encodeEcpayValue(raw).toLowerCase();
         const hash = await sha256Hex(encoded);
@@ -1115,7 +1121,10 @@
                 throw new Error('AmountTooLow');
             }
             const merchantTradeNo = makeMerchantTradeNo();
-            const baseOrigin = (location.origin && location.origin !== 'null') ? location.origin : ECPAY_CONFIG.siteUrl;
+            const currentOrigin = (location.origin && location.origin !== 'null') ? location.origin : '';
+            const allowedOrigins = [ECPAY_CONFIG.siteUrl];
+            if (currentOrigin && currentOrigin.startsWith('http')) allowedOrigins.push(currentOrigin);
+            const baseOrigin = allowedOrigins.includes(currentOrigin) ? currentOrigin : ECPAY_CONFIG.siteUrl;
             const returnBase = `${baseOrigin}${location.pathname}`;
             const params = {
                 MerchantID: ECPAY_CONFIG.merchantId,
@@ -1151,7 +1160,7 @@
             form.submit();
         } catch (e) {
             const err = document.getElementById('checkoutStep3Error');
-            err.innerText = '付款啟動失敗，請稍後重試。';
+            err.innerText = e && e.message === 'AmountTooLow' ? '最終金額不得低於 NT$ 1，請調整購物金後重試。' : '付款啟動失敗，請稍後重試。';
             err.style.display = 'block';
         } finally {
             payBtn.disabled = false;
@@ -1194,7 +1203,17 @@
         const paymentStatus = params.get('payment');
         if (paymentStatus === 'success') {
             const orderNo = params.get('order') || '';
-            completeOrder(orderNo);
+            const pendingRaw = localStorage.getItem('messy_pending_order');
+            const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+            if (pending && pending.orderNo === orderNo) {
+                completeOrder(orderNo);
+            } else {
+                startCheckout();
+                goToCheckoutStep(3);
+                const err = document.getElementById('checkoutStep3Error');
+                err.innerText = '付款回傳驗證失敗，請重新嘗試付款。';
+                err.style.display = 'block';
+            }
         } else if (paymentStatus === 'fail') {
             startCheckout();
             goToCheckoutStep(3);
