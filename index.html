@@ -133,6 +133,46 @@
         .product-detail-actions { display: flex; flex-direction: column; gap: 10px; }
         .detail-scroll-images { margin-top: 30px; }
         .detail-scroll-images img { width: 100%; display: block; margin-bottom: 10px; }
+
+        /* --- 結帳流程 --- */
+        .checkout-page { max-width: 980px; margin: 24px auto 60px; padding: 0 4%; display: none; }
+        .checkout-header { margin-bottom: 20px; }
+        .checkout-title { font-size: 1.4rem; letter-spacing: 1px; margin-bottom: 14px; }
+        .stepper { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .stepper-dot { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--text-amethyst); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; background: #fff; }
+        .stepper-dot.active { background: var(--text-amethyst); color: #fff; }
+        .stepper-line { flex: 1; height: 2px; background: #d8cbe3; }
+        .step-labels { display: flex; justify-content: space-between; gap: 8px; font-size: 0.72rem; opacity: 0.8; margin-bottom: 16px; }
+        .checkout-card { background: #f9f8fb; border: 1px solid #eee4f7; padding: 16px; margin-bottom: 14px; border-radius: 8px; }
+        .checkout-grid { display: grid; grid-template-columns: 120px 1fr auto; gap: 12px; align-items: center; }
+        .checkout-thumb { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f2f2f2; }
+        .checkout-item-name { font-size: 0.95rem; margin-bottom: 6px; }
+        .checkout-item-meta { font-size: 0.8rem; opacity: 0.75; line-height: 1.6; }
+        .checkout-item-subtotal { font-size: 0.9rem; font-weight: 600; }
+        .checkout-total-row { display: flex; justify-content: space-between; font-size: 0.95rem; margin-top: 10px; }
+        .checkout-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+        .checkout-actions .btn { flex: 1; min-height: 42px; font-size: 0.78rem; }
+        .checkout-step { display: none; }
+        .checkout-step.active { display: block; }
+        .checkout-login-gate { background: #fffaf2; border: 1px solid #f3dfb7; color: #7b5d1f; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem; }
+        .checkout-form .form-group textarea, .checkout-form .form-group select, .checkout-form .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd2ea; border-radius: 6px; background: #fff; color: var(--text-amethyst); }
+        .checkout-form .form-group textarea { min-height: 88px; resize: vertical; font-family: inherit; }
+        .checkout-error { color: #c70039; font-size: 0.8rem; margin-top: 8px; display: none; }
+        .checkout-alert { color: #c70039; font-size: 0.8rem; margin-top: 4px; line-height: 1.5; }
+        .checkout-summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.88rem; }
+        .checkout-summary-row.final { font-size: 1rem; font-weight: 600; border-top: 1px solid #e6d8f1; padding-top: 10px; margin-top: 10px; }
+        .checkout-complete { text-align: center; padding: 26px 16px; background: #f5fcf6; border: 1px solid #ccead1; border-radius: 8px; margin-top: 12px; display: none; }
+        .checkout-complete h3 { margin-bottom: 10px; }
+        .checkout-inline-btn { width: auto; padding: 10px 16px; }
+        @media (max-width: 860px) {
+            .checkout-grid { grid-template-columns: 86px 1fr; }
+            .checkout-item-subtotal { grid-column: 2; }
+        }
+        @media (max-width: 600px) {
+            .checkout-page { margin-top: 16px; padding: 0 16px 30px; }
+            .step-labels { font-size: 0.68rem; }
+            .checkout-actions .btn { min-width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -300,7 +340,7 @@
     <div class="cart-items" id="cartItemsList"></div>
     <div class="cart-footer">
         <div class="cart-total"><span>TOTAL</span><span id="cartTotalPrice">NT$ 0</span></div>
-        <button class="btn btn-full" onclick="showToast('前往付款系統...')">CHECKOUT</button>
+        <button class="btn btn-full" onclick="startCheckout()">CHECKOUT</button>
     </div>
 </div>
 <!-- 商品主區域 -->
@@ -316,6 +356,91 @@
                 <button class="btn btn-full" onclick="addToCartById('1', '')">Add to Bag</button>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="checkout-page" id="checkoutPage">
+    <div class="checkout-header">
+        <div class="checkout-title">CHECKOUT</div>
+        <div class="stepper">
+            <div class="stepper-dot" id="stepDot1">1</div><div class="stepper-line"></div>
+            <div class="stepper-dot" id="stepDot2">2</div><div class="stepper-line"></div>
+            <div class="stepper-dot" id="stepDot3">3</div>
+        </div>
+        <div class="step-labels">
+            <span>Step 1 購物車審核</span>
+            <span>Step 2 收件資料</span>
+            <span>Step 3 付款確認</span>
+        </div>
+    </div>
+
+    <div class="checkout-step" id="checkoutStep1">
+        <div id="checkoutCartList"></div>
+        <div class="checkout-total-row"><span>購物車小計</span><strong id="checkoutCartSubtotal">NT$ 0</strong></div>
+        <div class="checkout-actions">
+            <button class="btn" onclick="exitCheckout()">繼續購物</button>
+            <button class="btn btn-full" onclick="goToCheckoutStep(2)">下一步 Next</button>
+        </div>
+    </div>
+
+    <div class="checkout-step" id="checkoutStep2">
+        <div id="checkoutLoginGate" class="checkout-login-gate" style="display:none;">
+            請先登入/註冊會員後再繼續結帳。
+            <div style="margin-top:8px;"><button class="btn checkout-inline-btn" onclick="openMemberModal()">登入 / 註冊</button></div>
+        </div>
+        <div class="checkout-form">
+            <div class="form-group"><label>收件人姓名 *</label><input type="text" id="checkoutName"></div>
+            <div class="form-group"><label>收件人電話 *</label><input type="tel" id="checkoutPhone" placeholder="09xxxxxxxx"></div>
+            <div class="form-group"><label>完整收件地址 *</label><input type="text" id="checkoutAddress"></div>
+            <div class="form-group">
+                <label>送貨方式 *</label>
+                <select id="checkoutShipping" onchange="updateCheckoutSummary()">
+                    <option value="domestic">台灣本島郵寄 - NT$60（3-5 天）</option>
+                    <option value="international">國際包裹郵寄 - 費用依地區計算</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>備註（可選）</label>
+                <textarea id="checkoutNote" placeholder="國際寄件請留IG帳號 *&#10;International shipping - Please provide your IG account *"></textarea>
+                <div class="checkout-alert">❗ 外國客人請注意：國際郵寄費用將依據目的地國家另行計算，屆時將透過IG私訊告知。</div>
+            </div>
+            <div class="checkout-total-row"><span>運費</span><strong id="checkoutShippingFeeLabel">NT$ 60</strong></div>
+            <div class="checkout-error" id="checkoutStep2Error"></div>
+        </div>
+        <div class="checkout-actions">
+            <button class="btn" onclick="goToCheckoutStep(1)">上一步 Back</button>
+            <button class="btn btn-full" onclick="goToCheckoutStep(3)">下一步 Next</button>
+        </div>
+    </div>
+
+    <div class="checkout-step" id="checkoutStep3">
+        <div class="checkout-card">
+            <div style="font-size:0.95rem; margin-bottom:10px;">訂單摘要</div>
+            <div id="checkoutSummaryItems"></div>
+            <div id="checkoutCouponBlock" style="display:none; margin-top:12px;">
+                <label style="font-size:0.85rem; display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="useCouponCheckbox" onchange="updateCheckoutSummary()"> 使用購物金（可用 NT$ <span id="checkoutCouponBalance">0</span>）
+                </label>
+                <div class="form-group" style="margin-top:8px;">
+                    <input type="number" id="couponUseAmount" min="0" value="0" oninput="updateCheckoutSummary()" placeholder="輸入使用金額">
+                </div>
+            </div>
+            <div class="checkout-summary-row"><span>商品小計</span><span id="summaryItemsTotal">NT$ 0</span></div>
+            <div class="checkout-summary-row"><span>運費</span><span id="summaryShipping">NT$ 60</span></div>
+            <div class="checkout-summary-row"><span>購物金折抵</span><span id="summaryCoupon">- NT$ 0</span></div>
+            <div class="checkout-summary-row final"><span>最終金額</span><span id="summaryFinalTotal">NT$ 0</span></div>
+            <div class="checkout-error" id="checkoutStep3Error"></div>
+        </div>
+        <div class="checkout-actions">
+            <button class="btn" onclick="goToCheckoutStep(2)">上一步 Back</button>
+            <button class="btn btn-full" id="ecpayPayBtn" onclick="submitEcpayPayment()">綠界刷卡付款</button>
+        </div>
+    </div>
+
+    <div class="checkout-complete" id="checkoutComplete">
+        <h3>訂單已完成，感謝您的購買！</h3>
+        <p style="font-size:0.85rem; margin-bottom:10px;">訂單編號：<span id="checkoutOrderNo">-</span></p>
+        <button class="btn checkout-inline-btn" onclick="exitCheckout()">返回首頁</button>
     </div>
 </div>
 
@@ -370,6 +495,23 @@
     let currentUser = null;
     let _fpVerifiedEmail = null;
     let _currentDetailProduct = null;
+    const ECPAY_CONFIG = {
+        merchantId: '3483323',
+        hashKey: 'ORws3NWwcyy2eYGb',
+        hashIv: 'VxN2hjr35YIQLctL',
+        serviceUrl: 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5',
+        siteUrl: 'https://messyttl2i.github.io'
+    };
+    let checkoutStep = 1;
+    const checkoutFormData = {
+        name: '',
+        phone: '',
+        address: '',
+        shipping: 'domestic',
+        note: '',
+        useCoupon: false,
+        couponAmount: 0
+    };
 
     // Session lives in sessionStorage — cleared when browser is closed (manual login required)
     (function initSession() {
@@ -379,7 +521,11 @@
         }
     })();
 
-    window.onload = () => { updateCartUI(); updateMemberUI(); };
+    window.onload = () => {
+        updateCartUI();
+        updateMemberUI();
+        initCheckoutFromQuery();
+    };
 
     // --- PBKDF2 Password Helpers ---
     function generateSalt() {
@@ -428,6 +574,7 @@
             document.getElementById('loginDot').style.display = 'none';
             showRegisterForm();
         }
+        syncCheckoutLoginState();
     }
 
     function showLoginForm() {
@@ -697,6 +844,7 @@
             </div>`;
         });
         count.innerText = totalCount; total.innerText = `NT$ ${totalPrice.toLocaleString()}`;
+        renderCheckoutCart();
     }
     function updateQuantity(id, delta) {
         const item = cart.find(i => i.id === id);
@@ -711,6 +859,370 @@
         localStorage.setItem('messy_cart', JSON.stringify(cart));
         updateCartUI();
     }
+
+    function escapeHtml(text) {
+        return String(text || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function parseCartItemName(name) {
+        const match = String(name || '').match(/^(.*)\s\(([^)]+)\)$/);
+        return match ? { baseName: match[1], size: match[2] } : { baseName: String(name || ''), size: '-' };
+    }
+
+    function getCartSubtotal() {
+        return cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    }
+
+    function getShippingFee() {
+        return checkoutFormData.shipping === 'domestic' ? 60 : null;
+    }
+
+    function startCheckout() {
+        closeAll();
+        if (!cart.length) {
+            showToast('購物車目前是空的');
+            return;
+        }
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('checkoutPage').style.display = 'block';
+        checkoutStep = 1;
+        fillCheckoutForm();
+        renderCheckoutCart();
+        goToCheckoutStep(1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function exitCheckout() {
+        document.getElementById('checkoutPage').style.display = 'none';
+        document.getElementById('checkoutComplete').style.display = 'none';
+        document.getElementById('mainContainer').style.display = '';
+        document.getElementById('checkoutStep3Error').style.display = 'none';
+        checkoutStep = 1;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderCheckoutCart() {
+        const cartList = document.getElementById('checkoutCartList');
+        const subtotalEl = document.getElementById('checkoutCartSubtotal');
+        if (!cartList || !subtotalEl) return;
+        if (!cart.length) {
+            cartList.innerHTML = '<div class="checkout-card">購物車沒有商品，請先加入商品再結帳。</div>';
+            subtotalEl.innerText = 'NT$ 0';
+            return;
+        }
+        cartList.innerHTML = cart.map((item) => {
+            const parsed = parseCartItemName(item.name);
+            const subtotal = item.price * item.qty;
+            return `<div class="checkout-card checkout-grid">
+                <img class="checkout-thumb" src="${escapeHtml(item.img)}" alt="${escapeHtml(parsed.baseName)}">
+                <div>
+                    <div class="checkout-item-name">${escapeHtml(parsed.baseName)}</div>
+                    <div class="checkout-item-meta">尺寸：${escapeHtml(parsed.size)}<br>單價：NT$ ${item.price.toLocaleString()}</div>
+                    <div class="cart-qty-controls" style="margin-top:10px;">
+                        <button class="cart-qty-btn" onclick="updateQuantity('${item.id}', -1)">&#8722;</button>
+                        <span class="cart-qty-num">${item.qty}</span>
+                        <button class="cart-qty-btn" onclick="updateQuantity('${item.id}', 1)">&#43;</button>
+                        <button class="cart-remove-btn" onclick="removeFromCart('${item.id}')">刪除</button>
+                    </div>
+                </div>
+                <div class="checkout-item-subtotal">NT$ ${subtotal.toLocaleString()}</div>
+            </div>`;
+        }).join('');
+        subtotalEl.innerText = `NT$ ${getCartSubtotal().toLocaleString()}`;
+        updateCheckoutSummary();
+    }
+
+    function syncCheckoutLoginState() {
+        const gate = document.getElementById('checkoutLoginGate');
+        if (!gate) return;
+        gate.style.display = currentUser ? 'none' : 'block';
+        const couponBlock = document.getElementById('checkoutCouponBlock');
+        if (!couponBlock) return;
+        const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
+        document.getElementById('checkoutCouponBalance').innerText = balance;
+        couponBlock.style.display = balance > 0 ? 'block' : 'none';
+    }
+
+    function fillCheckoutForm() {
+        if (currentUser) {
+            checkoutFormData.name = checkoutFormData.name || currentUser.name || '';
+            checkoutFormData.phone = checkoutFormData.phone || currentUser.phone || '';
+        }
+        document.getElementById('checkoutName').value = checkoutFormData.name;
+        document.getElementById('checkoutPhone').value = checkoutFormData.phone;
+        document.getElementById('checkoutAddress').value = checkoutFormData.address;
+        document.getElementById('checkoutShipping').value = checkoutFormData.shipping;
+        document.getElementById('checkoutNote').value = checkoutFormData.note;
+        document.getElementById('useCouponCheckbox').checked = checkoutFormData.useCoupon;
+        document.getElementById('couponUseAmount').value = checkoutFormData.couponAmount || 0;
+        syncCheckoutLoginState();
+    }
+
+    function saveCheckoutForm() {
+        checkoutFormData.name = document.getElementById('checkoutName').value.trim();
+        const rawPhone = document.getElementById('checkoutPhone').value.trim();
+        const normalizedDigits = rawPhone.replace(/[^\d+]/g, '');
+        checkoutFormData.phone = normalizedDigits;
+        document.getElementById('checkoutPhone').value = normalizedDigits;
+        checkoutFormData.address = document.getElementById('checkoutAddress').value.trim();
+        checkoutFormData.shipping = document.getElementById('checkoutShipping').value;
+        checkoutFormData.note = document.getElementById('checkoutNote').value.trim();
+        checkoutFormData.useCoupon = document.getElementById('useCouponCheckbox').checked;
+        checkoutFormData.couponAmount = parseInt(document.getElementById('couponUseAmount').value || '0', 10) || 0;
+    }
+
+    function goToCheckoutStep(step) {
+        if (step === 2 && !cart.length) {
+            showToast('購物車沒有商品');
+            return;
+        }
+        if (step === 3 && !validateStep2()) return;
+        checkoutStep = step;
+        document.querySelectorAll('.checkout-step').forEach((el) => el.classList.remove('active'));
+        const stepEl = document.getElementById(`checkoutStep${step}`);
+        if (stepEl) stepEl.classList.add('active');
+        [1, 2, 3].forEach((n) => document.getElementById(`stepDot${n}`).classList.toggle('active', n <= step));
+        updateCheckoutSummary();
+    }
+
+    function validateStep2() {
+        if (!currentUser) {
+            const error = document.getElementById('checkoutStep2Error');
+            error.innerText = '請先登入/註冊會員後再繼續結帳。';
+            error.style.display = 'block';
+            return false;
+        }
+        saveCheckoutForm();
+        const error = document.getElementById('checkoutStep2Error');
+        error.style.display = 'none';
+        if (!checkoutFormData.name || !checkoutFormData.phone || !checkoutFormData.address) {
+            error.innerText = '請完整填寫收件人姓名、電話與地址。';
+            error.style.display = 'block';
+            return false;
+        }
+        const phoneValid = /^(\+?\d{8,15}|09\d{8})$/.test(checkoutFormData.phone);
+        if (!phoneValid) {
+            error.innerText = '電話格式不正確，請重新輸入。';
+            error.style.display = 'block';
+            return false;
+        }
+        if (checkoutFormData.address.length < 6) {
+            error.innerText = '請輸入完整收件地址。';
+            error.style.display = 'block';
+            return false;
+        }
+        return true;
+    }
+
+    function updateCheckoutSummary() {
+        if (!document.getElementById('checkoutPage')) return;
+        saveCheckoutForm();
+        const shippingFee = getShippingFee();
+        const shippingLabel = shippingFee == null ? '依地區另計' : `NT$ ${shippingFee}`;
+        document.getElementById('checkoutShippingFeeLabel').innerText = shippingLabel;
+        const itemsTotal = getCartSubtotal();
+        const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
+        const canUseCoupon = checkoutFormData.useCoupon && balance > 0;
+        const maxCoupon = Math.min(balance, itemsTotal + (shippingFee || 0));
+        let couponValue = canUseCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), maxCoupon) : 0;
+        document.getElementById('couponUseAmount').value = couponValue;
+        const finalAmount = Math.max(0, itemsTotal + (shippingFee || 0) - couponValue);
+        const finalLabel = shippingFee == null ? `NT$ ${finalAmount.toLocaleString()} + 國際運費` : `NT$ ${finalAmount.toLocaleString()}`;
+
+        document.getElementById('summaryItemsTotal').innerText = `NT$ ${itemsTotal.toLocaleString()}`;
+        document.getElementById('summaryShipping').innerText = shippingLabel;
+        document.getElementById('summaryCoupon').innerText = `- NT$ ${couponValue.toLocaleString()}`;
+        document.getElementById('summaryFinalTotal').innerText = finalLabel;
+
+        const summaryItems = document.getElementById('checkoutSummaryItems');
+        if (summaryItems) {
+            summaryItems.innerHTML = cart.map((item) => {
+                const parsed = parseCartItemName(item.name);
+                return `<div class="checkout-summary-row"><span>${escapeHtml(parsed.baseName)} (${escapeHtml(parsed.size)}) x ${item.qty}</span><span>NT$ ${(item.price * item.qty).toLocaleString()}</span></div>`;
+            }).join('');
+        }
+    }
+
+    function buildItemNameForEcpay() {
+        const items = cart.map((item) => `${item.name}x${item.qty}`);
+        return items.join('#').slice(0, 200) || 'MessyTT&L2i 商品';
+    }
+
+    function makeMerchantTradeNo() {
+        const nowPart = Date.now().toString().slice(-10);
+        const randomArr = new Uint8Array(3);
+        crypto.getRandomValues(randomArr);
+        const randPart = Array.from(randomArr).map((v) => String(v % 10)).join('');
+        return `MSY${nowPart}${randPart}`;
+    }
+
+    function getMerchantTradeDate() {
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+
+    async function sha256Hex(text) {
+        const data = new TextEncoder().encode(text);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function encodeEcpayValue(value) {
+        // ECPay CheckMacValue requires .NET UrlEncode-compatible output before SHA256 hashing.
+        return encodeURIComponent(value)
+            .replace(/%20/g, '+')
+            .replace(/!/g, '%21')
+            .replace(/\*/g, '%2a')
+            .replace(/\(/g, '%28')
+            .replace(/\)/g, '%29');
+    }
+
+    async function generateCheckMacValue(params) {
+        const sortedKeys = Object.keys(params).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+        const query = sortedKeys.map((key) => {
+            const value = String(params[key] ?? '');
+            if (/[&=]/.test(value)) throw new Error('PaymentParamInvalid');
+            return `${key}=${value}`;
+        }).join('&');
+        const raw = `HashKey=${ECPAY_CONFIG.hashKey}&${query}&HashIV=${ECPAY_CONFIG.hashIv}`;
+        const encoded = encodeEcpayValue(raw).toLowerCase();
+        const hash = await sha256Hex(encoded);
+        return hash.toUpperCase();
+    }
+
+    function clearCheckoutError() {
+        const err = document.getElementById('checkoutStep3Error');
+        err.style.display = 'none';
+        err.innerText = '';
+    }
+
+    async function submitEcpayPayment() {
+        clearCheckoutError();
+        if (!validateStep2()) {
+            goToCheckoutStep(2);
+            return;
+        }
+        if (!cart.length) {
+            showToast('購物車沒有商品');
+            return;
+        }
+        const payBtn = document.getElementById('ecpayPayBtn');
+        payBtn.disabled = true;
+        payBtn.innerText = '處理中...';
+        try {
+            updateCheckoutSummary();
+            const shippingFee = getShippingFee() || 0;
+            const itemsTotal = getCartSubtotal();
+            const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
+            const couponValue = checkoutFormData.useCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), Math.min(balance, itemsTotal + shippingFee)) : 0;
+            const totalAmount = itemsTotal + shippingFee - couponValue;
+            if (totalAmount < 1) {
+                throw new Error('AmountTooLow');
+            }
+            const merchantTradeNo = makeMerchantTradeNo();
+            const currentOrigin = (location.origin && location.origin !== 'null') ? location.origin : '';
+            const allowedOrigins = [ECPAY_CONFIG.siteUrl];
+            if (currentOrigin && currentOrigin.startsWith('http')) allowedOrigins.push(currentOrigin);
+            const baseOrigin = allowedOrigins.includes(currentOrigin) ? currentOrigin : ECPAY_CONFIG.siteUrl;
+            const returnBase = `${baseOrigin}${location.pathname}`;
+            const params = {
+                MerchantID: ECPAY_CONFIG.merchantId,
+                MerchantTradeNo: merchantTradeNo,
+                MerchantTradeDate: getMerchantTradeDate(),
+                PaymentType: 'aio',
+                TotalAmount: String(totalAmount),
+                TradeDesc: 'MessyTT&L2i訂單',
+                ItemName: buildItemNameForEcpay(),
+                ReturnURL: returnBase,
+                OrderResultURL: `${returnBase}?payment=success&order=${merchantTradeNo}`,
+                ClientBackURL: `${returnBase}?payment=success&order=${merchantTradeNo}`,
+                ChoosePayment: 'Credit',
+                EncryptType: '1'
+            };
+            params.CheckMacValue = await generateCheckMacValue(params);
+            localStorage.setItem('messy_pending_order', JSON.stringify({
+                orderNo: merchantTradeNo,
+                couponValue,
+                createdAt: Date.now()
+            }));
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = ECPAY_CONFIG.serviceUrl;
+            Object.keys(params).forEach((key) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = params[key];
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        } catch (e) {
+            const err = document.getElementById('checkoutStep3Error');
+            err.innerText = e && e.message === 'AmountTooLow' ? '最終金額不得低於 NT$ 1，請調整購物金後重試。' : '付款啟動失敗，請稍後重試。';
+            err.style.display = 'block';
+        } finally {
+            payBtn.disabled = false;
+            payBtn.innerText = '綠界刷卡付款';
+        }
+    }
+
+    function completeOrder(orderNo) {
+        const pendingRaw = localStorage.getItem('messy_pending_order');
+        const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+        if (pending && pending.couponValue && currentUser) {
+            const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+            const user = users[currentUser.email];
+            if (user) {
+                user.couponBalance = Math.max(0, (user.couponBalance || 0) - pending.couponValue);
+                users[currentUser.email] = user;
+                localStorage.setItem('messy_users', JSON.stringify(users));
+                messy_users = users;
+                currentUser = user;
+                sessionStorage.setItem('messy_session', JSON.stringify({ email: currentUser.email }));
+                updateMemberUI();
+            }
+        }
+        cart = [];
+        localStorage.setItem('messy_cart', JSON.stringify(cart));
+        localStorage.removeItem('messy_pending_order');
+        updateCartUI();
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('checkoutPage').style.display = 'block';
+        document.getElementById('checkoutStep1').classList.remove('active');
+        document.getElementById('checkoutStep2').classList.remove('active');
+        document.getElementById('checkoutStep3').classList.remove('active');
+        document.getElementById('checkoutComplete').style.display = 'block';
+        document.getElementById('checkoutOrderNo').innerText = orderNo || '-';
+        [1, 2, 3].forEach((n) => document.getElementById(`stepDot${n}`).classList.add('active'));
+    }
+
+    function initCheckoutFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const paymentStatus = params.get('payment');
+        if (paymentStatus === 'success') {
+            const orderNo = params.get('order') || '';
+            const pendingRaw = localStorage.getItem('messy_pending_order');
+            const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+            if (pending && pending.orderNo === orderNo) {
+                completeOrder(orderNo);
+            } else {
+                startCheckout();
+                goToCheckoutStep(3);
+                const err = document.getElementById('checkoutStep3Error');
+                err.innerText = '付款回傳驗證失敗，請重新嘗試付款。';
+                err.style.display = 'block';
+            }
+        } else if (paymentStatus === 'fail') {
+            startCheckout();
+            goToCheckoutStep(3);
+            const err = document.getElementById('checkoutStep3Error');
+            err.innerText = '付款失敗，請確認資訊後重試。';
+            err.style.display = 'block';
+        }
+    }
+
     let autoplay;
     function startAutoplay(el) { autoplay = setInterval(() => { el.scrollLeft += el.offsetWidth; if(el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0; }, 1200); }
     function stopAutoplay(el) { clearInterval(autoplay); }
