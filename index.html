@@ -156,7 +156,11 @@
         .checkout-step.active { display: block; }
         .checkout-login-gate { background: #fffaf2; border: 1px solid #f3dfb7; color: #7b5d1f; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem; }
         .checkout-form .form-group textarea, .checkout-form .form-group select, .checkout-form .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd2ea; border-radius: 6px; background: #fff; color: var(--text-amethyst); }
-        .checkout-form .form-group textarea { min-height: 88px; resize: vertical; font-family: inherit; }
+        .checkout-shipping-fixed { border: 1px solid #ddd2ea; border-radius: 8px; padding: 12px; background: #fff; }
+        .checkout-shipping-fixed label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+        .checkout-shipping-fixed .checkout-shipping-meta { margin-top: 6px; font-size: 0.82rem; opacity: 0.75; }
+        .checkout-store-info { margin-top: 10px; border: 1px solid #ddd2ea; border-radius: 8px; background: #fff; padding: 12px; font-size: 0.85rem; line-height: 1.65; }
+        .checkout-store-info.selected { border-color: #8b6ab8; box-shadow: 0 0 0 2px rgba(139, 106, 184, 0.12); background: #fbf8ff; }
         .checkout-error { color: #c70039; font-size: 0.8rem; margin-top: 8px; display: none; }
         .checkout-alert { color: #c70039; font-size: 0.8rem; margin-top: 4px; line-height: 1.5; }
         .checkout-summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.88rem; }
@@ -391,20 +395,27 @@
         <div class="checkout-form">
             <div class="form-group"><label>收件人姓名 *</label><input type="text" id="checkoutName"></div>
             <div class="form-group"><label>收件人電話 *</label><input type="tel" id="checkoutPhone" placeholder="09xxxxxxxx"></div>
-            <div class="form-group"><label>完整收件地址 *</label><input type="text" id="checkoutAddress"></div>
             <div class="form-group">
-                <label>送貨方式 *</label>
-                <select id="checkoutShipping" onchange="updateCheckoutSummary()">
-                    <option value="domestic">台灣本島郵寄 - NT$60（3-5 天）</option>
-                    <option value="international">國際包裹郵寄 - 費用依地區計算</option>
+                <label>送貨方式</label>
+                <div class="checkout-shipping-fixed">
+                    <label><input type="radio" checked disabled> 台灣本島 7-11 到店取貨</label>
+                    <div class="checkout-shipping-meta">（免運費・不付款・3-5 天內取件）</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>選擇取貨門市 *</label>
+                <select id="checkoutStoreCity" onchange="onCheckoutStoreCityChange()">
+                    <option value="">請選擇縣市</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>備註（可選）</label>
-                <textarea id="checkoutNote" placeholder="國際寄件請留IG帳號 *&#10;International shipping - Please provide your IG account *"></textarea>
-                <div class="checkout-alert">❗ 外國客人請注意：國際郵寄費用將依據目的地國家另行計算，屆時將透過IG私訊告知。</div>
+                <label>7-11 門市 *</label>
+                <select id="checkoutStoreId" onchange="onCheckoutStoreChange()">
+                    <option value="">請先選擇縣市</option>
+                </select>
+                <div class="checkout-store-info" id="checkoutStoreInfo" style="display:none;"></div>
             </div>
-            <div class="checkout-total-row"><span>運費</span><strong id="checkoutShippingFeeLabel">NT$ 60</strong></div>
+            <div class="checkout-total-row"><span>運費</span><strong id="checkoutShippingFeeLabel">NT$ 0（免運）</strong></div>
             <div class="checkout-error" id="checkoutStep2Error"></div>
         </div>
         <div class="checkout-actions">
@@ -417,6 +428,7 @@
         <div class="checkout-card">
             <div style="font-size:0.95rem; margin-bottom:10px;">訂單摘要</div>
             <div id="checkoutSummaryItems"></div>
+            <div class="checkout-store-info" id="checkoutSummaryStoreInfo" style="display:none;"></div>
             <div id="checkoutCouponBlock" style="display:none; margin-top:12px;">
                 <label style="font-size:0.85rem; display:flex; align-items:center; gap:8px;">
                     <input type="checkbox" id="useCouponCheckbox" onchange="updateCheckoutSummary()"> 使用購物金（可用 NT$ <span id="checkoutCouponBalance">0</span>）
@@ -426,7 +438,7 @@
                 </div>
             </div>
             <div class="checkout-summary-row"><span>商品小計</span><span id="summaryItemsTotal">NT$ 0</span></div>
-            <div class="checkout-summary-row"><span>運費</span><span id="summaryShipping">NT$ 60</span></div>
+            <div class="checkout-summary-row"><span>運費</span><span id="summaryShipping">NT$ 0（免運）</span></div>
             <div class="checkout-summary-row"><span>購物金折抵</span><span id="summaryCoupon">- NT$ 0</span></div>
             <div class="checkout-summary-row final"><span>最終金額</span><span id="summaryFinalTotal">NT$ 0</span></div>
             <div class="checkout-error" id="checkoutStep3Error"></div>
@@ -502,13 +514,44 @@
         serviceUrl: 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5',
         siteUrl: 'https://messyttl2i.github.io'
     };
+    const SEVEN_ELEVEN_STORES = {
+        '台北市': [
+            { id: '110001', name: '信義時代門市', address: '台北市信義區松壽路20號1樓', phone: '02-2723-7788' },
+            { id: '110002', name: '台北車站門市', address: '台北市中正區北平西路3號B1', phone: '02-2311-5566' }
+        ],
+        '新北市': [
+            { id: '220001', name: '板橋府中門市', address: '新北市板橋區府中路45號', phone: '02-2966-1122' },
+            { id: '220002', name: '新店大坪林門市', address: '新北市新店區民權路80號', phone: '02-2912-8899' }
+        ],
+        '桃園市': [
+            { id: '330001', name: '桃園站前門市', address: '桃園市桃園區中正路12號', phone: '03-333-2211' },
+            { id: '330002', name: '中壢海華門市', address: '桃園市中壢區元化路357號', phone: '03-427-6600' }
+        ],
+        '台中市': [
+            { id: '400001', name: '台中逢甲門市', address: '台中市西屯區文華路10號', phone: '04-2451-7788' },
+            { id: '400002', name: '台中公益門市', address: '台中市西區公益路168號', phone: '04-2326-3456' }
+        ],
+        '台南市': [
+            { id: '700001', name: '台南赤崁門市', address: '台南市中西區民族路二段215號', phone: '06-221-5566' },
+            { id: '700002', name: '台南東寧門市', address: '台南市東區東寧路438號', phone: '06-209-3322' }
+        ],
+        '高雄市': [
+            { id: '800001', name: '高雄巨蛋門市', address: '高雄市左營區博愛二路777號', phone: '07-555-8899' },
+            { id: '800002', name: '高雄三多門市', address: '高雄市前鎮區三多三路121號', phone: '07-333-2200' }
+        ],
+        '其他縣市': [
+            { id: '600001', name: '新竹竹科門市', address: '新竹市東區光復路一段99號', phone: '03-577-1122' },
+            { id: '900001', name: '屏東潮州門市', address: '屏東縣潮州鎮中山路123號', phone: '08-788-3344' }
+        ]
+    };
     let checkoutStep = 1;
     const checkoutFormData = {
         name: '',
         phone: '',
-        address: '',
-        shipping: 'domestic',
-        note: '',
+        shipping: 'seven-eleven-pickup',
+        storeCity: '',
+        storeId: '',
+        storeInfo: null,
         useCoupon: false,
         couponAmount: 0
     };
@@ -874,7 +917,7 @@
     }
 
     function getShippingFee() {
-        return checkoutFormData.shipping === 'domestic' ? 60 : null;
+        return 0;
     }
 
     function startCheckout() {
@@ -943,16 +986,90 @@
         couponBlock.style.display = balance > 0 ? 'block' : 'none';
     }
 
+    function getStoreCityList() {
+        return Object.keys(SEVEN_ELEVEN_STORES);
+    }
+
+    function getStoreByCityAndId(city, storeId) {
+        const stores = SEVEN_ELEVEN_STORES[city] || [];
+        return stores.find((store) => store.id === storeId) || null;
+    }
+
+    function renderStoreInfo(targetId, store) {
+        const infoEl = document.getElementById(targetId);
+        if (!infoEl) return;
+        if (!store) {
+            infoEl.style.display = 'none';
+            infoEl.classList.remove('selected');
+            infoEl.innerHTML = '';
+            return;
+        }
+        infoEl.style.display = 'block';
+        infoEl.classList.add('selected');
+        infoEl.innerHTML = `<div><strong>已選擇門市</strong></div>
+            <div>門市：${escapeHtml(store.name)}</div>
+            <div>地址：${escapeHtml(store.address)}</div>
+            <div>電話：${escapeHtml(store.phone)}</div>
+            <div>門市編號：${escapeHtml(store.id)}</div>`;
+    }
+
+    function initCheckoutStoreSelectors() {
+        const citySelect = document.getElementById('checkoutStoreCity');
+        if (!citySelect || citySelect.dataset.initialized === '1') return;
+        const cityOptions = ['<option value="">請選擇縣市</option>'].concat(
+            getStoreCityList().map((city) => `<option value="${escapeHtml(city)}">${escapeHtml(city)}</option>`)
+        );
+        citySelect.innerHTML = cityOptions.join('');
+        citySelect.dataset.initialized = '1';
+    }
+
+    function populateStoreOptions(city, selectedStoreId) {
+        const storeSelect = document.getElementById('checkoutStoreId');
+        if (!storeSelect) return;
+        if (!city) {
+            storeSelect.innerHTML = '<option value="">請先選擇縣市</option>';
+            return;
+        }
+        const stores = SEVEN_ELEVEN_STORES[city] || [];
+        const storeOptions = ['<option value="">請選擇 7-11 門市</option>'].concat(
+            stores.map((store) => `<option value="${escapeHtml(store.id)}">${escapeHtml(store.name)}（${escapeHtml(store.id)}）</option>`)
+        );
+        storeSelect.innerHTML = storeOptions.join('');
+        storeSelect.value = selectedStoreId || '';
+    }
+
+    function onCheckoutStoreCityChange() {
+        const city = document.getElementById('checkoutStoreCity').value;
+        populateStoreOptions(city, '');
+        checkoutFormData.storeCity = city;
+        checkoutFormData.storeId = '';
+        checkoutFormData.storeInfo = null;
+        renderStoreInfo('checkoutStoreInfo', null);
+        updateCheckoutSummary();
+    }
+
+    function onCheckoutStoreChange() {
+        const city = document.getElementById('checkoutStoreCity').value;
+        const storeId = document.getElementById('checkoutStoreId').value;
+        const store = city && storeId ? getStoreByCityAndId(city, storeId) : null;
+        checkoutFormData.storeCity = city;
+        checkoutFormData.storeId = storeId;
+        checkoutFormData.storeInfo = store ? { ...store, city } : null;
+        renderStoreInfo('checkoutStoreInfo', checkoutFormData.storeInfo);
+        updateCheckoutSummary();
+    }
+
     function fillCheckoutForm() {
         if (currentUser) {
             checkoutFormData.name = checkoutFormData.name || currentUser.name || '';
             checkoutFormData.phone = checkoutFormData.phone || currentUser.phone || '';
         }
+        initCheckoutStoreSelectors();
         document.getElementById('checkoutName').value = checkoutFormData.name;
         document.getElementById('checkoutPhone').value = checkoutFormData.phone;
-        document.getElementById('checkoutAddress').value = checkoutFormData.address;
-        document.getElementById('checkoutShipping').value = checkoutFormData.shipping;
-        document.getElementById('checkoutNote').value = checkoutFormData.note;
+        document.getElementById('checkoutStoreCity').value = checkoutFormData.storeCity || '';
+        populateStoreOptions(checkoutFormData.storeCity, checkoutFormData.storeId);
+        renderStoreInfo('checkoutStoreInfo', checkoutFormData.storeInfo);
         document.getElementById('useCouponCheckbox').checked = checkoutFormData.useCoupon;
         document.getElementById('couponUseAmount').value = checkoutFormData.couponAmount || 0;
         syncCheckoutLoginState();
@@ -964,9 +1081,13 @@
         const normalizedDigits = rawPhone.replace(/[^\d+]/g, '');
         checkoutFormData.phone = normalizedDigits;
         document.getElementById('checkoutPhone').value = normalizedDigits;
-        checkoutFormData.address = document.getElementById('checkoutAddress').value.trim();
-        checkoutFormData.shipping = document.getElementById('checkoutShipping').value;
-        checkoutFormData.note = document.getElementById('checkoutNote').value.trim();
+        checkoutFormData.shipping = 'seven-eleven-pickup';
+        checkoutFormData.storeCity = document.getElementById('checkoutStoreCity').value;
+        checkoutFormData.storeId = document.getElementById('checkoutStoreId').value;
+        const store = checkoutFormData.storeCity && checkoutFormData.storeId
+            ? getStoreByCityAndId(checkoutFormData.storeCity, checkoutFormData.storeId)
+            : null;
+        checkoutFormData.storeInfo = store ? { ...store, city: checkoutFormData.storeCity } : null;
         checkoutFormData.useCoupon = document.getElementById('useCouponCheckbox').checked;
         checkoutFormData.couponAmount = parseInt(document.getElementById('couponUseAmount').value || '0', 10) || 0;
     }
@@ -995,19 +1116,14 @@
         saveCheckoutForm();
         const error = document.getElementById('checkoutStep2Error');
         error.style.display = 'none';
-        if (!checkoutFormData.name || !checkoutFormData.phone || !checkoutFormData.address) {
-            error.innerText = '請完整填寫收件人姓名、電話與地址。';
+        if (!checkoutFormData.name || !checkoutFormData.phone || !checkoutFormData.storeInfo) {
+            error.innerText = '請完整填寫收件人姓名、電話與 7-11 門市。';
             error.style.display = 'block';
             return false;
         }
         const phoneValid = /^(\+?\d{8,15}|09\d{8})$/.test(checkoutFormData.phone);
         if (!phoneValid) {
             error.innerText = '電話格式不正確，請重新輸入。';
-            error.style.display = 'block';
-            return false;
-        }
-        if (checkoutFormData.address.length < 6) {
-            error.innerText = '請輸入完整收件地址。';
             error.style.display = 'block';
             return false;
         }
@@ -1018,16 +1134,16 @@
         if (!document.getElementById('checkoutPage')) return;
         saveCheckoutForm();
         const shippingFee = getShippingFee();
-        const shippingLabel = shippingFee == null ? '依地區另計' : `NT$ ${shippingFee}`;
+        const shippingLabel = `NT$ ${shippingFee.toLocaleString()}（免運）`;
         document.getElementById('checkoutShippingFeeLabel').innerText = shippingLabel;
         const itemsTotal = getCartSubtotal();
         const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
         const canUseCoupon = checkoutFormData.useCoupon && balance > 0;
-        const maxCoupon = Math.min(balance, itemsTotal + (shippingFee || 0));
+        const maxCoupon = Math.min(balance, itemsTotal + shippingFee);
         let couponValue = canUseCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), maxCoupon) : 0;
         document.getElementById('couponUseAmount').value = couponValue;
-        const finalAmount = Math.max(0, itemsTotal + (shippingFee || 0) - couponValue);
-        const finalLabel = shippingFee == null ? `NT$ ${finalAmount.toLocaleString()} + 國際運費` : `NT$ ${finalAmount.toLocaleString()}`;
+        const finalAmount = Math.max(0, itemsTotal + shippingFee - couponValue);
+        const finalLabel = `NT$ ${finalAmount.toLocaleString()}`;
 
         document.getElementById('summaryItemsTotal').innerText = `NT$ ${itemsTotal.toLocaleString()}`;
         document.getElementById('summaryShipping').innerText = shippingLabel;
@@ -1041,6 +1157,7 @@
                 return `<div class="checkout-summary-row"><span>${escapeHtml(parsed.baseName)} (${escapeHtml(parsed.size)}) x ${item.qty}</span><span>NT$ ${(item.price * item.qty).toLocaleString()}</span></div>`;
             }).join('');
         }
+        renderStoreInfo('checkoutSummaryStoreInfo', checkoutFormData.storeInfo);
     }
 
     function buildItemNameForEcpay() {
@@ -1144,6 +1261,12 @@
             localStorage.setItem('messy_pending_order', JSON.stringify({
                 orderNo: merchantTradeNo,
                 couponValue,
+                shippingFee,
+                recipient: {
+                    name: checkoutFormData.name,
+                    phone: checkoutFormData.phone
+                },
+                pickupStore: checkoutFormData.storeInfo,
                 createdAt: Date.now()
             }));
             const form = document.createElement('form');
