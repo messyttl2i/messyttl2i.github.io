@@ -1,9 +1,10 @@
 const crypto = require('crypto');
 
-const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID || '3483323';
+const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID;
 const HASH_KEY = process.env.ECPAY_LOGISTICS_HASH_KEY || process.env.ECPAY_HASH_KEY;
 const HASH_IV = process.env.ECPAY_LOGISTICS_HASH_IV || process.env.ECPAY_HASH_IV;
-const NETLIFY_SITE_URL = (process.env.NETLIFY_SITE_URL || 'https://messyttl2i.netlify.app').replace(/\/$/, '');
+const NETLIFY_SITE_URL = (process.env.NETLIFY_SITE_URL || '').replace(/\/$/, '');
+const ECPAY_MAP_URL = process.env.ECPAY_LOGISTICS_MAP_URL || 'https://logistics.ecpay.com.tw/Express/map';
 
 function ecpayEncode(value) {
   return encodeURIComponent(value)
@@ -27,7 +28,7 @@ function buildCheckMacValue(params, hashKey, hashIv) {
 function normalizeTradeNo(input) {
   const cleaned = String(input || '').replace(/[^0-9A-Za-z]/g, '');
   if (cleaned.length >= 8) return cleaned.slice(0, 20);
-  return `MAP${Date.now()}`.slice(0, 20);
+  return `MAP${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(0, 20);
 }
 
 function parseStoreFromQuery(query) {
@@ -50,11 +51,11 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers: corsHeaders, body: '' };
   }
 
-  if (!HASH_KEY || !HASH_IV) {
+  if (!MERCHANT_ID || !HASH_KEY || !HASH_IV || !NETLIFY_SITE_URL) {
     return {
       statusCode: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: false, error: 'MissingEcpayLogisticsSecrets' })
+      body: JSON.stringify({ success: false, error: 'MissingEcpayLogisticsConfig' })
     };
   }
 
@@ -100,7 +101,7 @@ exports.handler = async (event) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         success: true,
-        eMapUrl: 'https://logistics.ecpay.com.tw/Express/map',
+        eMapUrl: ECPAY_MAP_URL,
         formData: params,
         MerchantTradeNo: merchantTradeNo
       })

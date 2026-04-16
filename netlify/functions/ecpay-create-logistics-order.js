@@ -1,9 +1,12 @@
 const crypto = require('crypto');
 
-const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID || '3483323';
+const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID;
 const HASH_KEY = process.env.ECPAY_LOGISTICS_HASH_KEY || process.env.ECPAY_HASH_KEY;
 const HASH_IV = process.env.ECPAY_LOGISTICS_HASH_IV || process.env.ECPAY_HASH_IV;
-const NETLIFY_SITE_URL = (process.env.NETLIFY_SITE_URL || 'https://messyttl2i.netlify.app').replace(/\/$/, '');
+const NETLIFY_SITE_URL = (process.env.NETLIFY_SITE_URL || '').replace(/\/$/, '');
+const SENDER_NAME = process.env.ECPAY_SENDER_NAME || 'MessyTTL2i';
+const SENDER_PHONE = String(process.env.ECPAY_SENDER_PHONE || '').replace(/[^\d]/g, '');
+const ECPAY_LOGISTICS_CREATE_URL = process.env.ECPAY_LOGISTICS_CREATE_URL || 'https://logistics.ecpay.com.tw/Express/Create';
 
 function ecpayEncode(value) {
   return encodeURIComponent(value)
@@ -34,7 +37,7 @@ function getMerchantTradeDate(dateInput) {
 function normalizeTradeNo(input) {
   const cleaned = String(input || '').replace(/[^0-9A-Za-z]/g, '');
   if (cleaned.length >= 8) return cleaned.slice(0, 20);
-  return `LG${Date.now()}`.slice(0, 20);
+  return `LG${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(0, 20);
 }
 
 function parseEcpayResponse(text) {
@@ -62,11 +65,11 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers: corsHeaders, body: 'Method Not Allowed' };
   }
-  if (!HASH_KEY || !HASH_IV) {
+  if (!MERCHANT_ID || !HASH_KEY || !HASH_IV || !NETLIFY_SITE_URL || !/^\d{10}$/.test(SENDER_PHONE)) {
     return {
       statusCode: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: false, error: 'MissingEcpayLogisticsSecrets' })
+      body: JSON.stringify({ success: false, error: 'MissingEcpayLogisticsConfig' })
     };
   }
 
@@ -84,8 +87,8 @@ exports.handler = async (event) => {
       LogisticsSubType: 'UNIMARTC2C',
       GoodsAmount: String(amount),
       GoodsName: String(body.ItemName || body.TradeDesc || '商品訂單').slice(0, 25),
-      SenderName: 'MessyTTL2i',
-      SenderCellPhone: '0900000000',
+      SenderName: SENDER_NAME,
+      SenderCellPhone: SENDER_PHONE,
       ReceiverName: String(body.ReceiverName || '').slice(0, 10),
       ReceiverCellPhone: receiverPhone,
       ReceiverStoreID: String(body.CVSStoreID || ''),
@@ -100,10 +103,17 @@ exports.handler = async (event) => {
         body: JSON.stringify({ success: false, error: 'MissingRequiredFields' })
       };
     }
+    if (!/^\d{10}$/.test(params.ReceiverCellPhone)) {
+      return {
+        statusCode: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success: false, error: 'InvalidReceiverPhone' })
+      };
+    }
 
     params.CheckMacValue = buildCheckMacValue(params, HASH_KEY, HASH_IV);
     const payload = new URLSearchParams(params).toString();
-    const response = await fetch('https://logistics.ecpay.com.tw/Express/Create', {
+    const response = await fetch(ECPAY_LOGISTICS_CREATE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: payload

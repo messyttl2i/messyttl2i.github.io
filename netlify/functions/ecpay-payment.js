@@ -1,9 +1,10 @@
 const crypto = require('crypto');
 
-const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID || '3483323';
+const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID;
 const HASH_KEY = process.env.ECPAY_PAYMENT_HASH_KEY || process.env.ECPAY_HASH_KEY;
 const HASH_IV = process.env.ECPAY_PAYMENT_HASH_IV || process.env.ECPAY_HASH_IV;
-const NETLIFY_SITE_URL = (process.env.NETLIFY_SITE_URL || 'https://messyttl2i.netlify.app').replace(/\/$/, '');
+const NETLIFY_SITE_URL = (process.env.NETLIFY_SITE_URL || '').replace(/\/$/, '');
+const ECPAY_PAYMENT_URL = process.env.ECPAY_PAYMENT_URL || 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5';
 
 function ecpayEncode(value) {
   return encodeURIComponent(value)
@@ -34,7 +35,7 @@ function getMerchantTradeDate(dateInput) {
 function normalizeTradeNo(input) {
   const cleaned = String(input || '').replace(/[^0-9A-Za-z]/g, '');
   if (cleaned.length >= 8) return cleaned.slice(0, 20);
-  return `PAY${Date.now()}`.slice(0, 20);
+  return `PAY${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(0, 20);
 }
 
 function buildItemName(items) {
@@ -60,11 +61,11 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers: corsHeaders, body: 'Method Not Allowed' };
   }
-  if (!HASH_KEY || !HASH_IV) {
+  if (!MERCHANT_ID || !HASH_KEY || !HASH_IV || !NETLIFY_SITE_URL) {
     return {
       statusCode: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: false, error: 'MissingEcpayPaymentSecrets' })
+      body: JSON.stringify({ success: false, error: 'MissingEcpayPaymentConfig' })
     };
   }
 
@@ -99,7 +100,7 @@ exports.handler = async (event) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         success: true,
-        paymentUrl: 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5',
+        paymentUrl: ECPAY_PAYMENT_URL,
         formData: params
       })
     };

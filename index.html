@@ -537,6 +537,7 @@
         netlifyUrl: 'https://messyttl2i.netlify.app',
         siteUrl: 'https://messyttl2i.github.io'
     };
+    const EMAP_TIMEOUT_MS = 5 * 60 * 1000;
     let checkoutStep = 1;
     const checkoutFormData = {
         name: '',
@@ -1209,8 +1210,8 @@
         if (eMapTimeoutTimer) clearTimeout(eMapTimeoutTimer);
         eMapTimeoutTimer = setTimeout(() => {
             closeEMapModal();
-            alert('門市選擇逾時，請重新開啟地圖');
-        }, 5 * 60 * 1000);
+            showToast('門市選擇逾時，請重新開啟地圖');
+        }, EMAP_TIMEOUT_MS);
         form.submit();
         form.remove();
     }
@@ -1243,7 +1244,7 @@
             if (!response.ok || !data.success) throw new Error('MapInitFailed');
             openEMapModal(data);
         } catch (error) {
-            alert('無法打開門市選擇，請稍後重試');
+            showToast('無法打開門市選擇，請稍後重試');
         } finally {
             if (trigger) trigger.disabled = false;
         }
