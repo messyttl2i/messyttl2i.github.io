@@ -499,7 +499,8 @@
         merchantId: '3483323',
         hashKey: 'ORws3NWwcyy2eYGb',
         hashIv: 'VxN2hjr35YIQLctL',
-        serviceUrl: 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5'
+        serviceUrl: 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5',
+        siteUrl: 'https://messyttl2i.github.io'
     };
     let checkoutStep = 1;
     const checkoutFormData = {
@@ -959,7 +960,10 @@
 
     function saveCheckoutForm() {
         checkoutFormData.name = document.getElementById('checkoutName').value.trim();
-        checkoutFormData.phone = document.getElementById('checkoutPhone').value.trim();
+        const rawPhone = document.getElementById('checkoutPhone').value.trim();
+        const normalizedDigits = rawPhone.replace(/[^\d+]/g, '');
+        checkoutFormData.phone = normalizedDigits;
+        document.getElementById('checkoutPhone').value = normalizedDigits;
         checkoutFormData.address = document.getElementById('checkoutAddress').value.trim();
         checkoutFormData.shipping = document.getElementById('checkoutShipping').value;
         checkoutFormData.note = document.getElementById('checkoutNote').value.trim();
@@ -1045,7 +1049,9 @@
     }
 
     function makeMerchantTradeNo() {
-        return `MSY${Date.now().toString().slice(-14)}`;
+        const nowPart = Date.now().toString().slice(-10);
+        const randPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        return `MSY${nowPart}${randPart}`;
     }
 
     function getMerchantTradeDate() {
@@ -1061,6 +1067,7 @@
     }
 
     function encodeEcpayValue(value) {
+        // ECPay CheckMacValue requires .NET UrlEncode-compatible output before SHA256 hashing.
         return encodeURIComponent(value)
             .replace(/%20/g, '+')
             .replace(/!/g, '%21')
@@ -1103,9 +1110,12 @@
             const itemsTotal = getCartSubtotal();
             const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
             const couponValue = checkoutFormData.useCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), Math.min(balance, itemsTotal + shippingFee)) : 0;
-            const totalAmount = Math.max(1, itemsTotal + shippingFee - couponValue);
+            const totalAmount = itemsTotal + shippingFee - couponValue;
+            if (totalAmount < 1) {
+                throw new Error('AmountTooLow');
+            }
             const merchantTradeNo = makeMerchantTradeNo();
-            const baseOrigin = (location.origin && location.origin !== 'null') ? location.origin : 'https://messyttl2i.github.io';
+            const baseOrigin = (location.origin && location.origin !== 'null') ? location.origin : ECPAY_CONFIG.siteUrl;
             const returnBase = `${baseOrigin}${location.pathname}`;
             const params = {
                 MerchantID: ECPAY_CONFIG.merchantId,
