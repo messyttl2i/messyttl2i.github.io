@@ -162,6 +162,7 @@
         .checkout-shipping-fixed .checkout-shipping-meta { margin-top: 6px; font-size: 0.82rem; opacity: 0.75; }
         .checkout-store-info { margin-top: 10px; border: 1px solid #ddd2ea; border-radius: 8px; background: #fff; padding: 12px; font-size: 0.85rem; line-height: 1.65; }
         .checkout-store-info.selected { border-color: #8b6ab8; box-shadow: 0 0 0 2px rgba(139, 106, 184, 0.12); background: #fbf8ff; }
+        .required-badge { color: #d43f3a; font-size: 0.72rem; }
         .checkout-error { color: #c70039; font-size: 0.8rem; margin-top: 8px; display: none; }
         .checkout-alert { color: #c70039; font-size: 0.8rem; margin-top: 4px; line-height: 1.5; }
         .checkout-summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.88rem; }
@@ -169,6 +170,11 @@
         .checkout-complete { text-align: center; padding: 26px 16px; background: #f5fcf6; border: 1px solid #ccead1; border-radius: 8px; margin-top: 12px; display: none; }
         .checkout-complete h3 { margin-bottom: 10px; }
         .checkout-inline-btn { width: auto; padding: 10px 16px; }
+        .emap-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 2500; display: none; align-items: center; justify-content: center; padding: 16px; }
+        .emap-modal-content { width: min(960px, 100%); height: min(90vh, 760px); background: #fff; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; }
+        .emap-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; }
+        #eMapMount { flex: 1; background: #f7f7f7; }
+        #eMapMount iframe { width: 100%; height: 100%; border: 0; background: #fff; }
         @media (max-width: 860px) {
             .checkout-grid { grid-template-columns: 86px 1fr; }
             .checkout-item-subtotal { grid-column: 2; }
@@ -394,8 +400,8 @@
             <div style="margin-top:8px;"><button class="btn checkout-inline-btn" onclick="openMemberModal()">登入 / 註冊</button></div>
         </div>
         <div class="checkout-form">
-            <div class="form-group"><label>收件人姓名 *</label><input type="text" id="checkoutName"></div>
-            <div class="form-group"><label>收件人電話 *</label><input type="tel" id="checkoutPhone" placeholder="09xxxxxxxx"></div>
+            <div class="form-group"><label>收件人姓名 *</label><input type="text" id="recipientName"></div>
+            <div class="form-group"><label>收件人電話 *</label><input type="tel" id="recipientPhone" placeholder="09xxxxxxxx"></div>
             <div class="form-group">
                 <label>送貨方式</label>
                 <div class="checkout-shipping-fixed">
@@ -404,18 +410,22 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>選擇取貨門市 *</label>
-                <select id="checkoutStoreCity" onchange="onCheckoutStoreCityChange()">
-                    <option value="">請選擇縣市</option>
-                </select>
+                <label>選擇取貨門市 * <span class="required-badge">必選</span></label>
+                <div id="storeSelectionContainer">
+                    <button id="openEMapBtn" class="btn btn-full checkout-inline-btn" type="button">選擇 7-11 門市</button>
+                    <div class="checkout-store-info" id="selectedStoreInfo" style="display:none;">
+                        <div><strong>已選擇門市</strong></div>
+                        <div>門市名稱：<span id="storeName"></span></div>
+                        <div>地址：<span id="storeAddress"></span></div>
+                        <div>電話：<span id="storePhone"></span></div>
+                        <div>門市編號：<span id="storeCode"></span></div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>7-11 門市 *</label>
-                <select id="checkoutStoreId" onchange="onCheckoutStoreChange()">
-                    <option value="">請先選擇縣市</option>
-                </select>
-                <div class="checkout-store-info" id="checkoutStoreInfo" style="display:none;"></div>
-            </div>
+            <input type="hidden" id="cvsStoreID">
+            <input type="hidden" id="cvsStoreName">
+            <input type="hidden" id="cvsStoreAddress">
+            <input type="hidden" id="cvsStorePhone">
             <div class="checkout-total-row"><span>運費</span><strong id="checkoutShippingFeeLabel">NT$ 0（免運）</strong></div>
             <div class="checkout-error" id="checkoutStep2Error"></div>
         </div>
@@ -426,10 +436,9 @@
     </div>
 
     <div class="checkout-step" id="checkoutStep3">
-        <div class="checkout-card">
-            <div style="font-size:0.95rem; margin-bottom:10px;">訂單摘要</div>
-            <div id="checkoutSummaryItems"></div>
-            <div class="checkout-store-info" id="checkoutSummaryStoreInfo" style="display:none;"></div>
+        <div class="checkout-card order-summary">
+            <h3 style="font-size:0.95rem; margin-bottom:10px;">訂單摘要</h3>
+            <div id="summaryItems"></div>
             <div id="checkoutCouponBlock" style="display:none; margin-top:12px;">
                 <label style="font-size:0.85rem; display:flex; align-items:center; gap:8px;">
                     <input type="checkbox" id="useCouponCheckbox" onchange="updateCheckoutSummary()"> 使用購物金（可用 NT$ <span id="checkoutCouponBalance">0</span>）
@@ -438,15 +447,20 @@
                     <input type="number" id="couponUseAmount" min="0" value="0" oninput="updateCheckoutSummary()" placeholder="輸入使用金額">
                 </div>
             </div>
-            <div class="checkout-summary-row"><span>商品小計</span><span id="summaryItemsTotal">NT$ 0</span></div>
-            <div class="checkout-summary-row"><span>運費</span><span id="summaryShipping">NT$ 0（免運）</span></div>
-            <div class="checkout-summary-row"><span>購物金折抵</span><span id="summaryCoupon">- NT$ 0</span></div>
-            <div class="checkout-summary-row final"><span>最終金額</span><span id="summaryFinalTotal">NT$ 0</span></div>
+            <div class="checkout-summary-row"><span>商品小計</span><span id="subtotal">NT$0</span></div>
+            <div class="checkout-summary-row"><span>運費</span><span id="summaryShipping">NT$0（免運）</span></div>
+            <div class="checkout-summary-row" id="couponLine" style="display:none;"><span>購物金折扣</span><span id="couponDiscount">-NT$0</span></div>
+            <div class="checkout-summary-row final"><span>最終金額</span><span id="finalAmount">NT$0</span></div>
+            <div class="checkout-store-info" id="checkoutSummaryStoreInfo" style="display:none; margin-top: 12px;">
+                <div><strong id="summaryStoreName"></strong></div>
+                <div id="summaryStoreAddress"></div>
+                <div id="summaryStorePhone"></div>
+            </div>
             <div class="checkout-error" id="checkoutStep3Error"></div>
         </div>
         <div class="checkout-actions">
             <button class="btn" onclick="goToCheckoutStep(2)">上一步 Back</button>
-            <button class="btn btn-full" id="ecpayPayBtn" onclick="submitEcpayPayment()">綠界刷卡付款</button>
+            <button class="btn btn-full" id="paymentBtn" onclick="submitEcpayPayment()">確認付款</button>
         </div>
     </div>
 
@@ -454,6 +468,16 @@
         <h3>訂單已完成，感謝您的購買！</h3>
         <p style="font-size:0.85rem; margin-bottom:10px;">訂單編號：<span id="checkoutOrderNo">-</span></p>
         <button class="btn checkout-inline-btn" onclick="exitCheckout()">返回首頁</button>
+    </div>
+</div>
+
+<div class="emap-modal" id="eMapModal">
+    <div class="emap-modal-content">
+        <div class="emap-modal-header">
+            <strong>選擇 7-11 門市</strong>
+            <button type="button" class="btn checkout-inline-btn" onclick="closeEMapModal()">關閉</button>
+        </div>
+        <div id="eMapMount"></div>
     </div>
 </div>
 
@@ -510,52 +534,21 @@
     let _currentDetailProduct = null;
     const ECPAY_CONFIG = {
         merchantId: '3483323',
-        hashKey: 'ORws3NWwcyy2eYGb',
-        hashIv: 'VxN2hjr35YIQLctL',
-        serviceUrl: 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5',
+        netlifyUrl: 'https://messyttl2i.netlify.app',
         siteUrl: 'https://messyttl2i.github.io'
     };
-    const SEVEN_ELEVEN_STORES = {
-        '台北市': [
-            { id: '110001', name: '信義時代門市', address: '台北市信義區松壽路20號1樓', phone: '02-2723-7788' },
-            { id: '110002', name: '台北車站門市', address: '台北市中正區北平西路3號B1', phone: '02-2311-5566' }
-        ],
-        '新北市': [
-            { id: '220001', name: '板橋府中門市', address: '新北市板橋區府中路45號', phone: '02-2966-1122' },
-            { id: '220002', name: '新店大坪林門市', address: '新北市新店區民權路80號', phone: '02-2912-8899' }
-        ],
-        '桃園市': [
-            { id: '330001', name: '桃園站前門市', address: '桃園市桃園區中正路12號', phone: '03-333-2211' },
-            { id: '330002', name: '中壢海華門市', address: '桃園市中壢區元化路357號', phone: '03-427-6600' }
-        ],
-        '台中市': [
-            { id: '400001', name: '台中逢甲門市', address: '台中市西屯區文華路10號', phone: '04-2451-7788' },
-            { id: '400002', name: '台中公益門市', address: '台中市西區公益路168號', phone: '04-2326-3456' }
-        ],
-        '台南市': [
-            { id: '700001', name: '台南赤崁門市', address: '台南市中西區民族路二段215號', phone: '06-221-5566' },
-            { id: '700002', name: '台南東寧門市', address: '台南市東區東寧路438號', phone: '06-209-3322' }
-        ],
-        '高雄市': [
-            { id: '800001', name: '高雄巨蛋門市', address: '高雄市左營區博愛二路777號', phone: '07-555-8899' },
-            { id: '800002', name: '高雄三多門市', address: '高雄市前鎮區三多三路121號', phone: '07-333-2200' }
-        ],
-        '其他縣市': [
-            { id: '600001', name: '新竹竹科門市', address: '新竹市東區光復路一段99號', phone: '03-577-1122' },
-            { id: '900001', name: '屏東潮州門市', address: '屏東縣潮州鎮中山路123號', phone: '08-788-3344' }
-        ]
-    };
+    const EMAP_TIMEOUT_MS = 5 * 60 * 1000;
     let checkoutStep = 1;
     const checkoutFormData = {
         name: '',
         phone: '',
         shipping: 'seven-eleven-pickup',
-        storeCity: '',
         storeId: '',
         storeInfo: null,
         useCoupon: false,
         couponAmount: 0
     };
+    let eMapTimeoutTimer = null;
 
     // Session lives in sessionStorage — cleared when browser is closed (manual login required)
     (function initSession() {
@@ -569,7 +562,28 @@
         updateCartUI();
         updateMemberUI();
         initCheckoutFromQuery();
+        const openBtn = document.getElementById('openEMapBtn');
+        if (openBtn) openBtn.addEventListener('click', openEMapSelector);
     };
+
+    window.addEventListener('message', (event) => {
+        if (!event || !event.data || event.data.type !== 'CVS_SELECTION') return;
+        const selected = event.data;
+        document.getElementById('cvsStoreID').value = selected.StoreID || '';
+        document.getElementById('cvsStoreName').value = selected.StoreName || '';
+        document.getElementById('cvsStoreAddress').value = selected.StoreAddress || '';
+        document.getElementById('cvsStorePhone').value = selected.StorePhone || '';
+        checkoutFormData.storeId = selected.StoreID || '';
+        checkoutFormData.storeInfo = selected.StoreID ? {
+            id: selected.StoreID || '',
+            name: selected.StoreName || '',
+            address: selected.StoreAddress || '',
+            phone: selected.StorePhone || ''
+        } : null;
+        updateSelectedStoreDisplay(selected);
+        updateCheckoutSummary();
+        closeEMapModal();
+    });
 
     // --- PBKDF2 Password Helpers ---
     function generateSalt() {
@@ -987,15 +1001,6 @@
         couponBlock.style.display = balance > 0 ? 'block' : 'none';
     }
 
-    function getStoreCityList() {
-        return Object.keys(SEVEN_ELEVEN_STORES);
-    }
-
-    function getStoreByCityAndId(city, storeId) {
-        const stores = SEVEN_ELEVEN_STORES[city] || [];
-        return stores.find((store) => store.id === storeId) || null;
-    }
-
     function renderStoreInfo(targetId, store) {
         const infoEl = document.getElementById(targetId);
         if (!infoEl) return;
@@ -1014,50 +1019,18 @@
             <div>門市編號：${escapeHtml(store.id)}</div>`;
     }
 
-    function initCheckoutStoreSelectors() {
-        const citySelect = document.getElementById('checkoutStoreCity');
-        if (!citySelect || citySelect.dataset.initialized === 'true') return;
-        const cityOptions = ['<option value="">請選擇縣市</option>'].concat(
-            getStoreCityList().map((city) => `<option value="${escapeHtml(city)}">${escapeHtml(city)}</option>`)
-        );
-        citySelect.innerHTML = cityOptions.join('');
-        citySelect.dataset.initialized = 'true';
-    }
-
-    function populateStoreOptions(city, selectedStoreId) {
-        const storeSelect = document.getElementById('checkoutStoreId');
-        if (!storeSelect) return;
-        if (!city) {
-            storeSelect.innerHTML = '<option value="">請先選擇縣市</option>';
+    function updateSelectedStoreDisplay(storeData) {
+        const selectedStoreInfo = document.getElementById('selectedStoreInfo');
+        if (!selectedStoreInfo) return;
+        if (!storeData || !storeData.StoreID) {
+            selectedStoreInfo.style.display = 'none';
             return;
         }
-        const stores = SEVEN_ELEVEN_STORES[city] || [];
-        const storeOptions = ['<option value="">請選擇 7-11 門市</option>'].concat(
-            stores.map((store) => `<option value="${escapeHtml(store.id)}">${escapeHtml(store.name)}（${escapeHtml(store.id)}）</option>`)
-        );
-        storeSelect.innerHTML = storeOptions.join('');
-        storeSelect.value = selectedStoreId || '';
-    }
-
-    function onCheckoutStoreCityChange() {
-        const city = document.getElementById('checkoutStoreCity').value;
-        populateStoreOptions(city, '');
-        checkoutFormData.storeCity = city;
-        checkoutFormData.storeId = '';
-        checkoutFormData.storeInfo = null;
-        renderStoreInfo('checkoutStoreInfo', null);
-        updateCheckoutSummary();
-    }
-
-    function onCheckoutStoreChange() {
-        const city = document.getElementById('checkoutStoreCity').value;
-        const storeId = document.getElementById('checkoutStoreId').value;
-        const store = city && storeId ? getStoreByCityAndId(city, storeId) : null;
-        checkoutFormData.storeCity = city;
-        checkoutFormData.storeId = storeId;
-        checkoutFormData.storeInfo = store ? { ...store, city } : null;
-        renderStoreInfo('checkoutStoreInfo', checkoutFormData.storeInfo);
-        updateCheckoutSummary();
+        document.getElementById('storeName').innerText = storeData.StoreName || '';
+        document.getElementById('storeAddress').innerText = storeData.StoreAddress || '';
+        document.getElementById('storePhone').innerText = storeData.StorePhone || '';
+        document.getElementById('storeCode').innerText = storeData.StoreID || '';
+        selectedStoreInfo.style.display = 'block';
     }
 
     function fillCheckoutForm() {
@@ -1065,30 +1038,40 @@
             checkoutFormData.name = checkoutFormData.name || currentUser.name || '';
             checkoutFormData.phone = checkoutFormData.phone || currentUser.phone || '';
         }
-        initCheckoutStoreSelectors();
-        document.getElementById('checkoutName').value = checkoutFormData.name;
-        document.getElementById('checkoutPhone').value = checkoutFormData.phone;
-        document.getElementById('checkoutStoreCity').value = checkoutFormData.storeCity || '';
-        populateStoreOptions(checkoutFormData.storeCity, checkoutFormData.storeId);
-        renderStoreInfo('checkoutStoreInfo', checkoutFormData.storeInfo);
+        document.getElementById('recipientName').value = checkoutFormData.name;
+        document.getElementById('recipientPhone').value = checkoutFormData.phone;
+        document.getElementById('cvsStoreID').value = checkoutFormData.storeId || '';
+        document.getElementById('cvsStoreName').value = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.name : '';
+        document.getElementById('cvsStoreAddress').value = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.address : '';
+        document.getElementById('cvsStorePhone').value = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.phone : '';
+        updateSelectedStoreDisplay({
+            StoreID: checkoutFormData.storeId || '',
+            StoreName: checkoutFormData.storeInfo ? checkoutFormData.storeInfo.name : '',
+            StoreAddress: checkoutFormData.storeInfo ? checkoutFormData.storeInfo.address : '',
+            StorePhone: checkoutFormData.storeInfo ? checkoutFormData.storeInfo.phone : ''
+        });
         document.getElementById('useCouponCheckbox').checked = checkoutFormData.useCoupon;
         document.getElementById('couponUseAmount').value = checkoutFormData.couponAmount || 0;
         syncCheckoutLoginState();
     }
 
     function saveCheckoutForm() {
-        checkoutFormData.name = document.getElementById('checkoutName').value.trim();
-        const rawPhone = document.getElementById('checkoutPhone').value.trim();
-        const normalizedDigits = rawPhone.replace(/[^\d+]/g, '');
+        checkoutFormData.name = document.getElementById('recipientName').value.trim();
+        const rawPhone = document.getElementById('recipientPhone').value.trim();
+        const normalizedDigits = rawPhone.replace(/[^\d]/g, '');
         checkoutFormData.phone = normalizedDigits;
-        document.getElementById('checkoutPhone').value = normalizedDigits;
+        document.getElementById('recipientPhone').value = normalizedDigits;
         checkoutFormData.shipping = 'seven-eleven-pickup';
-        checkoutFormData.storeCity = document.getElementById('checkoutStoreCity').value;
-        checkoutFormData.storeId = document.getElementById('checkoutStoreId').value;
-        const store = checkoutFormData.storeCity && checkoutFormData.storeId
-            ? getStoreByCityAndId(checkoutFormData.storeCity, checkoutFormData.storeId)
-            : null;
-        checkoutFormData.storeInfo = store ? { ...store, city: checkoutFormData.storeCity } : null;
+        checkoutFormData.storeId = document.getElementById('cvsStoreID').value;
+        const storeName = document.getElementById('cvsStoreName').value;
+        const storeAddress = document.getElementById('cvsStoreAddress').value;
+        const storePhone = document.getElementById('cvsStorePhone').value;
+        checkoutFormData.storeInfo = checkoutFormData.storeId ? {
+            id: checkoutFormData.storeId,
+            name: storeName,
+            address: storeAddress,
+            phone: storePhone
+        } : null;
         checkoutFormData.useCoupon = document.getElementById('useCouponCheckbox').checked;
         checkoutFormData.couponAmount = parseInt(document.getElementById('couponUseAmount').value || '0', 10) || 0;
     }
@@ -1122,7 +1105,7 @@
             error.style.display = 'block';
             return false;
         }
-        const phoneValid = /^(\+?\d{8,15}|09\d{8})$/.test(checkoutFormData.phone);
+        const phoneValid = /^\d{10}$/.test(checkoutFormData.phone);
         if (!phoneValid) {
             error.innerText = '電話格式不正確，請重新輸入。';
             error.style.display = 'block';
@@ -1145,21 +1128,27 @@
         let couponValue = canUseCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), maxCoupon) : 0;
         document.getElementById('couponUseAmount').value = couponValue;
         const finalAmount = Math.max(0, itemsTotal + safeShippingFee - couponValue);
-        const finalLabel = `NT$ ${finalAmount.toLocaleString()}`;
+        const finalLabel = `NT$${finalAmount.toLocaleString()}`;
+        const couponLabel = `-NT$${couponValue.toLocaleString()}`;
 
-        document.getElementById('summaryItemsTotal').innerText = `NT$ ${itemsTotal.toLocaleString()}`;
-        document.getElementById('summaryShipping').innerText = shippingLabel;
-        document.getElementById('summaryCoupon').innerText = `- NT$ ${couponValue.toLocaleString()}`;
-        document.getElementById('summaryFinalTotal').innerText = finalLabel;
+        document.getElementById('subtotal').innerText = `NT$${itemsTotal.toLocaleString()}`;
+        document.getElementById('summaryShipping').innerText = 'NT$0（免運）';
+        document.getElementById('couponDiscount').innerText = couponLabel;
+        document.getElementById('couponLine').style.display = couponValue > 0 ? 'flex' : 'none';
+        document.getElementById('finalAmount').innerText = finalLabel;
 
-        const summaryItems = document.getElementById('checkoutSummaryItems');
+        const summaryItems = document.getElementById('summaryItems');
         if (summaryItems) {
             summaryItems.innerHTML = cart.map((item) => {
                 const parsed = parseCartItemName(item.name);
                 return `<div class="checkout-summary-row"><span>${escapeHtml(parsed.baseName)} (${escapeHtml(parsed.size)}) x ${item.qty}</span><span>NT$ ${(item.price * item.qty).toLocaleString()}</span></div>`;
             }).join('');
         }
-        renderStoreInfo('checkoutSummaryStoreInfo', checkoutFormData.storeInfo);
+        const summaryStoreBox = document.getElementById('checkoutSummaryStoreInfo');
+        summaryStoreBox.style.display = checkoutFormData.storeInfo ? 'block' : 'none';
+        document.getElementById('summaryStoreName').innerText = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.name : '';
+        document.getElementById('summaryStoreAddress').innerText = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.address : '';
+        document.getElementById('summaryStorePhone').innerText = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.phone : '';
     }
 
     function buildItemNameForEcpay() {
@@ -1167,7 +1156,7 @@
         return items.join('#').slice(0, 200) || 'MessyTT&L2i 商品';
     }
 
-    function makeMerchantTradeNo() {
+    function generateTradeNo() {
         const nowPart = Date.now().toString().slice(-10);
         const randomArr = new Uint8Array(3);
         crypto.getRandomValues(randomArr);
@@ -1181,33 +1170,84 @@
         return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     }
 
-    async function sha256Hex(text) {
-        const data = new TextEncoder().encode(text);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
 
-    function encodeEcpayValue(value) {
-        // ECPay CheckMacValue requires .NET UrlEncode-compatible output before SHA256 hashing.
-        return encodeURIComponent(value)
-            .replace(/%20/g, '+')
-            .replace(/!/g, '%21')
-            .replace(/\*/g, '%2a')
-            .replace(/\(/g, '%28')
-            .replace(/\)/g, '%29');
+    function calculateFinalAmount() {
+        const shippingFee = getShippingFee() || 0;
+        const itemsTotal = getCartSubtotal();
+        const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
+        const couponValue = checkoutFormData.useCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), Math.min(balance, itemsTotal + shippingFee)) : 0;
+        return Math.max(0, itemsTotal + shippingFee - couponValue);
     }
 
-    async function generateCheckMacValue(params) {
-        const sortedKeys = Object.keys(params).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-        const query = sortedKeys.map((key) => {
-            const value = String(params[key] ?? '');
-            if (/[&=]/.test(value)) throw new Error('PaymentParamInvalid');
-            return `${key}=${value}`;
-        }).join('&');
-        const raw = `HashKey=${ECPAY_CONFIG.hashKey}&${query}&HashIV=${ECPAY_CONFIG.hashIv}`;
-        const encoded = encodeEcpayValue(raw).toLowerCase();
-        const hash = await sha256Hex(encoded);
-        return hash.toUpperCase();
+    function getFunctionBaseUrl() {
+        return location.origin.includes('netlify.app') ? '' : ECPAY_CONFIG.netlifyUrl;
+    }
+
+    function openEMapModal(data) {
+        const modal = document.getElementById('eMapModal');
+        const mount = document.getElementById('eMapMount');
+        if (!modal || !mount) return;
+        mount.innerHTML = '';
+        const iframe = document.createElement('iframe');
+        iframe.name = `emapFrame_${Date.now()}`;
+        mount.appendChild(iframe);
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = data.eMapUrl;
+        form.target = iframe.name;
+        Object.keys(data.formData || {}).forEach((key) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = data.formData[key];
+            form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        modal.style.display = 'flex';
+        if (eMapTimeoutTimer) clearTimeout(eMapTimeoutTimer);
+        eMapTimeoutTimer = setTimeout(() => {
+            closeEMapModal();
+            showToast('門市選擇逾時，請重新開啟地圖');
+        }, EMAP_TIMEOUT_MS);
+        form.submit();
+        form.remove();
+    }
+
+    function closeEMapModal() {
+        const modal = document.getElementById('eMapModal');
+        const mount = document.getElementById('eMapMount');
+        if (!modal || !mount) return;
+        modal.style.display = 'none';
+        mount.innerHTML = '';
+        if (eMapTimeoutTimer) {
+            clearTimeout(eMapTimeoutTimer);
+            eMapTimeoutTimer = null;
+        }
+    }
+
+    async function openEMapSelector() {
+        const trigger = document.getElementById('openEMapBtn');
+        if (trigger) trigger.disabled = true;
+        try {
+            const response = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-logistics-map`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    MerchantTradeNo: generateTradeNo(),
+                    Device: isMobile() ? 1 : 0
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error('MapInitFailed');
+            openEMapModal(data);
+        } catch (error) {
+            showToast('無法打開門市選擇，請稍後重試');
+        } finally {
+            if (trigger) trigger.disabled = false;
+        }
     }
 
     function clearCheckoutError() {
@@ -1226,40 +1266,64 @@
             showToast('購物車沒有商品');
             return;
         }
-        const payBtn = document.getElementById('ecpayPayBtn');
+        const payBtn = document.getElementById('paymentBtn');
         payBtn.disabled = true;
         payBtn.innerText = '處理中...';
         try {
             updateCheckoutSummary();
             const shippingFee = getShippingFee() || 0;
-            const itemsTotal = getCartSubtotal();
-            const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
-            const couponValue = checkoutFormData.useCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), Math.min(balance, itemsTotal + shippingFee)) : 0;
-            const totalAmount = itemsTotal + shippingFee - couponValue;
+            const totalAmount = calculateFinalAmount();
             if (totalAmount < 1) {
                 throw new Error('AmountTooLow');
             }
-            const merchantTradeNo = makeMerchantTradeNo();
+            const merchantTradeNo = generateTradeNo();
             const currentOrigin = (location.origin && location.origin !== 'null') ? location.origin : '';
             const allowedOrigins = [ECPAY_CONFIG.siteUrl];
             if (currentOrigin && currentOrigin.startsWith('http')) allowedOrigins.push(currentOrigin);
             const baseOrigin = allowedOrigins.includes(currentOrigin) ? currentOrigin : ECPAY_CONFIG.siteUrl;
             const returnBase = `${baseOrigin}${location.pathname}`;
-            const params = {
-                MerchantID: ECPAY_CONFIG.merchantId,
-                MerchantTradeNo: merchantTradeNo,
-                MerchantTradeDate: getMerchantTradeDate(),
-                PaymentType: 'aio',
-                TotalAmount: String(totalAmount),
-                TradeDesc: 'MessyTT&L2i訂單',
-                ItemName: buildItemNameForEcpay(),
-                ReturnURL: returnBase,
-                OrderResultURL: `${returnBase}?payment=success&order=${merchantTradeNo}`,
-                ClientBackURL: `${returnBase}?payment=success&order=${merchantTradeNo}`,
-                ChoosePayment: 'Credit',
-                EncryptType: '1'
-            };
-            params.CheckMacValue = await generateCheckMacValue(params);
+            const logisticsResponse = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-create-logistics-order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    MerchantTradeNo: merchantTradeNo,
+                    MerchantTradeDate: getMerchantTradeDate(),
+                    TotalAmount: totalAmount,
+                    TradeDesc: '商品訂單',
+                    ItemName: buildItemNameForEcpay(),
+                    ReceiverName: checkoutFormData.name,
+                    ReceiverPhone: checkoutFormData.phone,
+                    CVSStoreID: checkoutFormData.storeId
+                })
+            });
+            const logisticsData = await logisticsResponse.json();
+            if (!logisticsResponse.ok || !logisticsData.success) {
+                throw new Error('LogisticsCreateFailed');
+            }
+
+            const paymentResponse = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    MerchantTradeNo: logisticsData.MerchantTradeNo || merchantTradeNo,
+                    MerchantTradeDate: getMerchantTradeDate(),
+                    TotalAmount: totalAmount,
+                    TradeDesc: 'MessyTT&L2i訂單',
+                    Items: cart.map((item) => ({ name: item.name, qty: item.qty })),
+                    ReturnURL: `${ECPAY_CONFIG.netlifyUrl}/.netlify/functions/ecpay-payment`,
+                    OrderResultURL: `${returnBase}?payment=success&order=${merchantTradeNo}`,
+                    AllPayLogisticsID: logisticsData.AllPayLogisticsID || '',
+                    CVSStoreID: checkoutFormData.storeId
+                })
+            });
+            const paymentData = await paymentResponse.json();
+            if (!paymentResponse.ok || !paymentData.success) {
+                throw new Error('PaymentCreateFailed');
+            }
+
+            const couponValue = checkoutFormData.useCoupon
+                ? Math.max(0, getCartSubtotal() + shippingFee - totalAmount)
+                : 0;
             localStorage.setItem('messy_pending_order', JSON.stringify({
                 orderNo: merchantTradeNo,
                 couponValue,
@@ -1269,27 +1333,30 @@
                     phone: checkoutFormData.phone
                 },
                 pickupStore: checkoutFormData.storeInfo,
+                logisticsId: logisticsData.AllPayLogisticsID || '',
                 createdAt: Date.now()
             }));
             const form = document.createElement('form');
             form.method = 'post';
-            form.action = ECPAY_CONFIG.serviceUrl;
-            Object.keys(params).forEach((key) => {
+            form.action = paymentData.paymentUrl;
+            Object.keys(paymentData.formData || {}).forEach((key) => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = key;
-                input.value = params[key];
+                input.value = paymentData.formData[key];
                 form.appendChild(input);
             });
             document.body.appendChild(form);
             form.submit();
         } catch (e) {
             const err = document.getElementById('checkoutStep3Error');
-            err.innerText = e && e.message === 'AmountTooLow' ? '最終金額不得低於 NT$ 1，請調整購物金後重試。' : '付款啟動失敗，請稍後重試。';
+            err.innerText = e && e.message === 'AmountTooLow'
+                ? '最終金額不得低於 NT$ 1，請調整購物金後重試。'
+                : '支付過程失敗，請稍後重試。';
             err.style.display = 'block';
         } finally {
             payBtn.disabled = false;
-            payBtn.innerText = '綠界刷卡付款';
+            payBtn.innerText = '確認付款';
         }
     }
 
