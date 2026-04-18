@@ -1182,8 +1182,9 @@
         return Math.max(0, itemsTotal + shippingFee - couponValue);
     }
 
-    function getFunctionBaseUrl() {
-        return location.origin.includes('netlify.app') ? '' : ECPAY_CONFIG.netlifyUrl;
+   function getFunctionBaseUrl() {
+    return location.origin; // 直接用當前網址
+}
     }
 
     function openEMapModal(data) {
