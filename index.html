@@ -1,19 +1,1624 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MessyTT&L2i | Official Store</title>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 // JavaScript functions to manage autoplay and displaying toast notifications
 
+
+    <style>
+        :root {
+            --bg-sleet: #D6DADC; /* Pantone 14-4005 */
+            --text-amethyst: #8A5FA2; /* Pantone 17-3628 */
+            --white: #ffffff;
+            --sidebar-width: 320px;
+        }
+
+        /* --- 基礎設定 --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, 'Helvetica Neue', sans-serif; background: var(--white); color: var(--text-amethyst); overflow-x: hidden; }
+
+        /* --- Header --- */
+        header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 4%; background: var(--bg-sleet); height: 100px; position: sticky; top: 0; z-index: 1000; }
+        .header-left { display: flex; gap: 20px; align-items: center; cursor: pointer; letter-spacing: 2px; font-size: 0.8rem; }
+        .header-center img { height: 80px; cursor: pointer; transition: 0.3s; }
+        .header-right { display: flex; gap: 20px; justify-content: flex-end; font-size: 1.1rem; align-items: center; }
+        
+        .icon-btn { cursor: pointer; position: relative; }
+        .cart-count { position: absolute; top: -8px; right: -8px; background: var(--text-amethyst); color: #fff; font-size: 0.65rem; padding: 2px 5px; border-radius: 50%; }
+        /* 登入狀態小點 */
+        .login-dot { position: absolute; bottom: -2px; right: -2px; width: 8px; height: 8px; background: #50C878; border-radius: 50%; border: 1px solid white; display: none; }
+
+        /* --- 面板系統 --- */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.15); display: none; z-index: 1100; backdrop-filter: blur(2px); }
+        .panel { position: fixed; top: 0; height: 100%; background: rgba(240, 243, 247, 0.98); transition: 0.4s ease; z-index: 1101; padding: 40px 25px; display: flex; flex-direction: column; }
+        .sidebar { left: -320px; width: var(--sidebar-width); }
+        .cart-drawer { right: -350px; width: 350px; }
+        .panel.active { left: 0; }
+        .cart-drawer.active { right: 0; }
+
+        /* 控制側邊欄與購物車頂部的標題區域 */
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            font-size: 1.2rem;
+        }
+
+        /* --- 會員制度系統 --- */
+        .member-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 30px; z-index: 1200; display: none; width: 95%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 0.8rem; margin-bottom: 8px; opacity: 0.6; color: var(--text-amethyst); }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: none; border-bottom: 1px solid var(--bg-sleet); outline: none; background: #f4f7fa; color: var(--text-amethyst); font-family: inherit; }
+
+        /* 已登入視圖 */
+        #loggedInView { display: none; text-align: center; }
+        .member-profile-header { border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
+        .member-profile-header h2 { font-size: 1.4rem; margin-bottom: 5px; }
+        .member-menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f9f9f9; cursor: pointer; text-decoration: none; color: var(--text-amethyst); font-size: 0.9rem; }
+        .coupon-balance-badge { display: inline-block; background: #f9f0ff; border: 1px solid var(--text-amethyst); color: var(--text-amethyst); font-size: 0.75rem; padding: 4px 12px; border-radius: 20px; margin-top: 8px; }
+
+        /* --- 側邊欄目錄 (恢復原有階層) --- */
+        .nav-list { list-style: none; flex-grow: 1; }
+        .nav-item { margin-bottom: 30px; }
+        .nav-link { text-decoration: none; color: var(--text-amethyst); font-size: 0.85rem; text-transform: uppercase; cursor: pointer; display: flex; justify-content: space-between; letter-spacing: 1.5px; }
+        .dropdown { padding-left: 15px; display: none; margin-top: 10px; }
+        .dropdown.show { display: block; }
+        .sub-item { display: block; padding: 6px 0; color: var(--text-amethyst); opacity: 0.7; text-decoration: none; font-size: 0.75rem; }
+        .social-link { display: flex; align-items: center; text-decoration: none; color: var(--text-amethyst); font-size: 0.75rem; margin-bottom: 12px; }
+        .social-link i { margin-right: 10px; font-size: 1rem; }
+        
+        /* --- 商品展示區 --- */
+        .main-container { max-width: 1400px; margin: 50px auto; padding: 0 4%; }
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 45px 18px; }
+        .image-box { width: 100%; aspect-ratio: 1/1; background: #f5f5f5; margin-bottom: 10px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; cursor: pointer; }
+        .image-box::-webkit-scrollbar { display: none; }
+        .image-box img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
+        .product-name-link { cursor: pointer; text-decoration: none; color: var(--text-amethyst); }
+        .product-name-link:hover { text-decoration: underline; }
+      
+        /* 按鈕樣式 */
+        .btn { width: 100%; padding: 12px 0; font-size: 0.7rem; border: 1px solid var(--text-amethyst); cursor: pointer; background: none; color: var(--text-amethyst); text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
+        .btn:hover { background: var(--text-amethyst); color: #fff; }
+        .btn-full { background: var(--text-amethyst); color: #fff; }
+
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-amethyst); color: white; padding: 10px 25px; font-size: 0.75rem; opacity: 0; transition: 0.5s; z-index: 3000; border-radius: 2px; pointer-events: none; }
+
+        .form-toggle { text-align: center; margin-top: 15px; font-size: 0.8rem; opacity: 0.7; }
+        .form-toggle a { color: var(--text-amethyst); cursor: pointer; text-decoration: underline; }
+
+        @media (max-width: 600px) { .product-grid { grid-template-columns: repeat(1, 1fr); } }
+
+        /* --- 購物車項目按鈕 --- */
+        .cart-item { display: flex; gap: 10px; margin-bottom: 15px; align-items: flex-start; }
+        .cart-item-info { flex: 1; }
+        .cart-qty-controls { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .cart-qty-btn { width: 24px; height: 24px; border: 1px solid var(--text-amethyst); background: none; color: var(--text-amethyst); cursor: pointer; font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .cart-qty-btn:hover { background: var(--text-amethyst); color: #fff; }
+        .cart-qty-num { font-size: 0.85rem; min-width: 20px; text-align: center; }
+        .cart-remove-btn { background: none; border: none; color: #999; cursor: pointer; font-size: 0.75rem; margin-top: 4px; text-decoration: underline; padding: 0; }
+        .cart-remove-btn:hover { color: #c00; }
+
+        /* --- 會員資料編輯視圖 --- */
+        #editProfileView { display: none; }
+        .edit-profile-back { cursor: pointer; font-size: 0.8rem; opacity: 0.6; margin-bottom: 20px; display: inline-block; }
+        .edit-profile-back:hover { opacity: 1; }
+        .edit-section-title { font-size: 0.75rem; opacity: 0.5; letter-spacing: 2px; text-transform: uppercase; margin: 20px 0 10px; border-top: 1px solid #eee; padding-top: 15px; }
+
+        /* --- 忘記密碼視圖 --- */
+        #forgotPasswordForm { display: none; }
+        #forgotPasswordStep2 { display: none; }
+
+        /* --- 唯讀欄位 --- */
+        .readonly-input { background: #ececec !important; color: #999 !important; cursor: not-allowed !important; }
+
+        /* --- 商品詳情頁 --- */
+        #productDetailOverlay { position: fixed; inset: 0; background: var(--white); z-index: 2000; display: none; overflow-y: auto; }
+        .product-detail-container { max-width: 700px; margin: 0 auto; padding: 20px 4% 60px; }
+        .product-detail-back { cursor: pointer; font-size: 0.85rem; opacity: 0.6; margin-bottom: 20px; display: inline-block; letter-spacing: 1px; }
+        .product-detail-back:hover { opacity: 1; }
+        .product-detail-main-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f5f5f5; display: block; }
+        .product-detail-thumbnails { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; }
+        .product-detail-thumbnails img { width: 70px; height: 70px; object-fit: cover; cursor: pointer; flex-shrink: 0; border: 2px solid transparent; transition: border-color 0.2s; }
+        .product-detail-thumbnails img.active { border-color: var(--text-amethyst); }
+        .product-detail-info { margin-top: 20px; }
+        .product-detail-name { font-size: 1.2rem; letter-spacing: 1px; margin-bottom: 8px; }
+        .product-detail-price { font-size: 1rem; opacity: 0.7; margin-bottom: 18px; }
+        .product-detail-size { margin-bottom: 18px; }
+        .product-detail-size label { display: block; font-size: 0.8rem; opacity: 0.6; margin-bottom: 6px; }
+        .product-detail-size select { width: 100%; padding: 10px; border: 1px solid var(--bg-sleet); outline: none; background: #f4f7fa; color: var(--text-amethyst); font-family: inherit; font-size: 0.9rem; }
+        .product-detail-actions { display: flex; flex-direction: column; gap: 10px; }
+        .detail-scroll-images { margin-top: 30px; }
+        .detail-scroll-images img { width: 100%; display: block; margin-bottom: 10px; }
+
+        /* --- 結帳流程 --- */
+        .checkout-page { max-width: 980px; margin: 24px auto 60px; padding: 0 4%; display: none; }
+        .checkout-header { margin-bottom: 20px; }
+        .checkout-title { font-size: 1.4rem; letter-spacing: 1px; margin-bottom: 14px; }
+        .stepper { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .stepper-dot { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--text-amethyst); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; background: #fff; }
+        .stepper-dot.active { background: var(--text-amethyst); color: #fff; }
+        .stepper-line { flex: 1; height: 2px; background: #d8cbe3; }
+        .step-labels { display: flex; justify-content: space-between; gap: 8px; font-size: 0.72rem; opacity: 0.8; margin-bottom: 16px; }
+        .checkout-card { background: #f9f8fb; border: 1px solid #eee4f7; padding: 16px; margin-bottom: 14px; border-radius: 8px; }
+        .checkout-grid { display: grid; grid-template-columns: 120px 1fr auto; gap: 12px; align-items: center; }
+        .checkout-thumb { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f2f2f2; }
+        .checkout-item-name { font-size: 0.95rem; margin-bottom: 6px; }
+        .checkout-item-meta { font-size: 0.8rem; opacity: 0.75; line-height: 1.6; }
+        .checkout-item-subtotal { font-size: 0.9rem; font-weight: 600; }
+        .checkout-total-row { display: flex; justify-content: space-between; font-size: 0.95rem; margin-top: 10px; }
+        .checkout-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+        .checkout-actions .btn { flex: 1; min-height: 42px; font-size: 0.78rem; }
+        .checkout-step { display: none; }
+        .checkout-step.active { display: block; }
+        .checkout-login-gate { background: #fffaf2; border: 1px solid #f3dfb7; color: #7b5d1f; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem; }
+        .checkout-form .form-group textarea, .checkout-form .form-group select, .checkout-form .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd2ea; border-radius: 6px; background: #fff; color: var(--text-amethyst); }
+        .checkout-form .form-group textarea { min-height: 88px; resize: vertical; font-family: inherit; }
+        .checkout-shipping-fixed { border: 1px solid #ddd2ea; border-radius: 8px; padding: 12px; background: #fff; }
+        .checkout-shipping-fixed label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+        .checkout-shipping-fixed .checkout-shipping-meta { margin-top: 6px; font-size: 0.82rem; opacity: 0.75; }
+        .checkout-store-info { margin-top: 10px; border: 1px solid #ddd2ea; border-radius: 8px; background: #fff; padding: 12px; font-size: 0.85rem; line-height: 1.65; }
+        .checkout-store-info.selected { border-color: #8b6ab8; box-shadow: 0 0 0 2px rgba(139, 106, 184, 0.12); background: #fbf8ff; }
+        .required-badge { color: #d43f3a; font-size: 0.72rem; }
+        .checkout-error { color: #c70039; font-size: 0.8rem; margin-top: 8px; display: none; }
+        .checkout-alert { color: #c70039; font-size: 0.8rem; margin-top: 4px; line-height: 1.5; }
+        .checkout-summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.88rem; }
+        .checkout-summary-row.final { font-size: 1rem; font-weight: 600; border-top: 1px solid #e6d8f1; padding-top: 10px; margin-top: 10px; }
+        .checkout-complete { text-align: center; padding: 26px 16px; background: #f5fcf6; border: 1px solid #ccead1; border-radius: 8px; margin-top: 12px; display: none; }
+        .checkout-complete h3 { margin-bottom: 10px; }
+        .checkout-inline-btn { width: auto; padding: 10px 16px; }
+        .emap-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 2500; display: none; align-items: center; justify-content: center; padding: 16px; }
+        .emap-modal-content { width: min(960px, 100%); height: min(90vh, 760px); background: #fff; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; }
+        .emap-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; }
+        #eMapMount { flex: 1; background: #f7f7f7; }
+        #eMapMount iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+        @media (max-width: 860px) {
+            .checkout-grid { grid-template-columns: 86px 1fr; }
+            .checkout-item-subtotal { grid-column: 2; }
+        }
+        @media (max-width: 600px) {
+            .checkout-page { margin-top: 16px; padding: 0 16px 30px; }
+            .step-labels { font-size: 0.68rem; }
+            .checkout-actions .btn { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left" onclick="togglePanel('sidebar')">
+        <span class="icon-btn" style="font-size:1.2rem;">&#9776;</span> <span>SHOP</span>
+    </div>
+    <div class="header-center">
+        <img src="images/S__80977927-.png" alt="Logo" onclick="location.href='index.html'">
+    </div>
+    <div class="header-right">
+        <div class="icon-btn" onclick="openMemberModal()" aria-label="會員帳號">
+            <span style="font-size:1.1rem;">&#128100;</span>
+            <div id="loginDot" class="login-dot"></div>
+        </div>
+        <div class="icon-btn" onclick="togglePanel('cart-drawer')" aria-label="購物車">
+            <span style="font-size:1.1rem;">&#128722;</span>
+            <span class="cart-count" id="cartCount">0</span>
+        </div>
+    </div>
+</header>
+
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+<div class="member-modal" id="memberModal">
+    <div id="formView">
+        <div id="registerForm">
+            <h3 style="text-align:center; margin-bottom:25px;">REGISTER:建立你的個人資料！</h3>
+            <div class="form-group"><label>姓名(Name) *</label><input type="text" id="reg_name" placeholder=""></div>
+            <div class="form-group"><label>電子郵件(Email) *</label><input type="email" id="reg_email" placeholder=""></div>
+            <div class="form-group"><label>密碼(Password) *</label><input type="password" id="reg_pw" placeholder=""></div>
+            <div class="form-group"><label>電話(Phone)</label><input type="tel" id="reg_phone" placeholder=""></div>
+            <div class="form-group">
+                <label>性別(Gender)</label>
+                <select id="reg_gender">
+                    <option value="">-- 請選擇 --</option>
+                    <option value="male">男 Male</option>
+                    <option value="female">女 Female</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>生日(Birth)</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="number" id="reg_birth_year" placeholder="年" min="1900" max="2099" style="flex:2;">
+                    <input type="number" id="reg_birth_month" placeholder="月" min="1" max="12" style="flex:1;">
+                    <input type="number" id="reg_birth_day" placeholder="日" min="1" max="31" style="flex:1;">
+                </div>
+            </div>
+            <button class="btn btn-full" id="submitBtn" onclick="handleRegister()">立即加入！</button>
+            <p class="form-toggle">已有帳號？<a onclick="showLoginForm()">立即登入</a></p>
+        </div>
+        <div id="loginForm" style="display:none;">
+            <h3 style="text-align:center; margin-bottom:25px;">LOGIN:登入你的帳號</h3>
+            <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="login_email" placeholder=""></div>
+            <div class="form-group"><label>密碼(Password)</label><input type="password" id="login_pw" placeholder=""></div>
+            <div id="loginError" style="color:red; font-size:0.75rem; margin-bottom:10px; display:none;">Email 或密碼不正確，請再試一次。</div>
+            <button class="btn btn-full" onclick="handleLogin()">登入</button>
+            <p class="form-toggle">還沒有帳號？<a onclick="showRegisterForm()">立即註冊</a></p>
+            <p class="form-toggle"><a onclick="showForgotPasswordForm()">忘記密碼？</a></p>
+        </div>
+        <div id="forgotPasswordForm">
+            <h3 style="text-align:center; margin-bottom:25px;">忘記密碼</h3>
+            <div id="forgotPasswordStep1">
+                <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="fp_email" placeholder="請輸入您的帳號 Email"></div>
+                <div id="fpEmailError" style="color:red; font-size:0.75rem; margin-bottom:10px; display:none;"></div>
+                <button class="btn btn-full" onclick="handleForgotPasswordStep1()">確認</button>
+            </div>
+            <div id="forgotPasswordStep2">
+                <p style="font-size:0.8rem; opacity:0.6; margin-bottom:15px; text-align:center;">Email 驗證成功！請設定新密碼。</p>
+                <div class="form-group"><label>新密碼(New Password) *</label><input type="password" id="fp_new_pw" placeholder="至少 6 個字元"></div>
+                <div class="form-group"><label>確認新密碼(Confirm) *</label><input type="password" id="fp_confirm_pw" placeholder="再次輸入新密碼"></div>
+                <div id="fpResetError" style="color:red; font-size:0.75rem; margin-bottom:10px; display:none;"></div>
+                <button class="btn btn-full" onclick="handleForgotPasswordStep2()">更新密碼</button>
+            </div>
+            <p class="form-toggle" style="margin-top:15px;"><a onclick="showLoginForm()">&#8592; 返回登入</a></p>
+        </div>
+    </div>
+
+    <div id="loggedInView">
+        <div class="member-profile-header">
+            <div style="background:#000; color:#fff; font-size:0.6rem; display:inline-block; padding:2px 8px; border-radius:20px; margin-bottom:10px;">MEMBER</div>
+            <h2 id="displayUserName"></h2>
+            <p id="displayUserEmail" style="font-size: 0.7rem; opacity: 0.5;"></p>
+            <div id="couponBalanceDisplay" class="coupon-balance-badge" style="display:none;">🎁 購物金：NT$ <span id="couponBalanceAmount">0</span></div>
+        </div>
+        <div class="member-menu">
+            <div class="member-menu-item" onclick="handleEditProfile()"><span>會員資料 Membership</span><span>&#8250;</span></div>
+            <div class="member-menu-item" style="margin-top: 20px; border-top: 1px solid #f0f0f0;" onclick="handleLogout()"><span>登出 Log out</span></div>
+        </div>
+        <button class="btn btn-full" style="margin-top: 30px;" onclick="closeAll()">返回首頁 BACK</button>
+    </div>
+
+    <div id="editProfileView">
+        <span class="edit-profile-back" onclick="showLoggedInView()">&#8592; 返回會員頁面</span>
+        <h3 style="text-align:center; margin-bottom:20px;">修改會員資料</h3>
+        <div class="form-group"><label>姓名(Name)</label><input type="text" id="edit_name" placeholder=""></div>
+        <div class="form-group"><label>電子郵件(Email)</label><input type="email" id="edit_email" placeholder="" readonly class="readonly-input"></div>
+        <div class="form-group"><label>電話(Phone)</label><input type="tel" id="edit_phone" placeholder=""></div>
+        <div class="form-group">
+            <label>性別(Gender)</label>
+            <select id="edit_gender">
+                <option value="">-- 請選擇 --</option>
+                <option value="male">男 Male</option>
+                <option value="female">女 Female</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>生日(Birth)</label>
+            <div style="display:flex; gap:8px;">
+                <input type="number" id="edit_birth_year" placeholder="年" min="1900" max="2099" style="flex:2;">
+                <input type="number" id="edit_birth_month" placeholder="月" min="1" max="12" style="flex:1;">
+                <input type="number" id="edit_birth_day" placeholder="日" min="1" max="31" style="flex:1;">
+            </div>
+        </div>
+        <div class="edit-section-title">修改密碼（選填）</div>
+        <div class="form-group"><label>新密碼(New Password)</label><input type="password" id="edit_new_pw" placeholder="留空則不修改"></div>
+        <div class="form-group"><label>確認新密碼(Confirm)</label><input type="password" id="edit_confirm_pw" placeholder="再次輸入新密碼"></div>
+        <div class="edit-section-title">驗證身份</div>
+        <div class="form-group"><label>目前密碼(Current Password) *</label><input type="password" id="edit_current_pw" placeholder="請輸入目前密碼以確認修改"></div>
+        <div id="editProfileError" style="color:red; font-size:0.75rem; margin-bottom:10px; display:none;"></div>
+        <button class="btn btn-full" onclick="saveProfileChanges()">儲存修改 SAVE</button>
+    </div>
+</div>
+
+<div class="panel sidebar" id="sidebar">
+    <div class="panel-header">
+        <div>MESSYTT&L2I</div>
+    </div>   
+    <ul class="nav-list">
+        <li class="nav-item"><a href="#" class="nav-link" style="color: #b388eb; font-weight: 600;" onclick="filterProducts('ALL'); closeAll();">HOME</a></li>
+        <li class="nav-item"><a href="#" class="nav-link">26SS</a></li>
+        <li class="nav-item">
+            <div class="nav-link" onclick="document.getElementById('m-drop').classList.toggle('show')">ALL MESSYTT <span>&#8964;</span></div>
+            <div id="m-drop" class="dropdown">
+                <a href="#" class="sub-item" onclick="filterProducts('CLOTHING'); closeAll();">CLOTHING</a>
+                <a href="#" class="sub-item" onclick="filterProducts('ORIGINAL GOODS'); closeAll();">ORIGINAL GOODS</a>
+                <a href="#" class="sub-item" onclick="filterProducts('Wearable device'); closeAll();">Wearable device</a>
+            </div>
+        </li>
+        <li class="nav-item">
+            <div class="nav-link" onclick="document.getElementById('l-drop').classList.toggle('show')">ALL L2I <span>&#8964;</span></div>
+            <div id="l-drop" class="dropdown">
+                <a href="#" class="sub-item" onclick="filterProducts('NECKLACE'); closeAll();">NECKLACE</a>
+                <a href="#" class="sub-item" onclick="filterProducts('RING'); closeAll();">RING</a>
+            </div>
+        </li>
+        <li class="nav-item" style="margin-top: 30px;"><a href="#" class="nav-link" style="opacity:0.6;">CONTACT US</a></li>
+    </ul>
+
+    <div class="sidebar-footer">
+        <a href="https://instagram.com/6ttd_d" class="social-link" target="_blank">
+            <span style="margin-right:10px;">&#128247;</span> @6ttd_d ・ MessyTT
+        </a>
+        <a href="https://instagram.com/6tto.o" class="social-link" target="_blank">
+            <span style="margin-right:10px;">&#128247;</span> @6tto.o ・ L2i
+        </a>
+    </div>
+</div>
+<div class="panel cart-drawer" id="cart-drawer">
+    <div class="panel-header">
+        <div>YOUR BAG</div>
+        <span style="cursor:pointer; font-size:1.2rem;" onclick="closeAll()">&#10005;</span>
+    </div>
+    <div class="cart-items" id="cartItemsList"></div>
+    <div class="cart-footer">
+        <div class="cart-total"><span>TOTAL</span><span id="cartTotalPrice">NT$ 0</span></div>
+        <button class="btn btn-full" onclick="startCheckout()">CHECKOUT</button>
+    </div>
+</div>
+<!-- 商品主區域 -->
+<div class="main-container" id="mainContainer">
+    <div class="product-grid">
+        <div class="product-card" data-category="CLOTHING" data-product-id="1">
+            <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)" onclick="showProductDetail('1')">
+                <img src="images/S__81002508_0.jpg"><img src="images/S__81002509_0.jpg">
+            </div>
+            <div class="product-info">
+                <div class="product-name"><a class="product-name-link" onclick="showProductDetail('1')">Cyber Butterfly Necklace</a></div>
+                <div class="product-price">NT$ 2,580</div>
+                <button class="btn btn-full" onclick="addToCartById('1', '')">Add to Bag</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="checkout-page" id="checkoutPage">
+    <div class="checkout-header">
+        <div class="checkout-title">CHECKOUT</div>
+        <div class="stepper">
+            <div class="stepper-dot" id="stepDot1">1</div><div class="stepper-line"></div>
+            <div class="stepper-dot" id="stepDot2">2</div><div class="stepper-line"></div>
+            <div class="stepper-dot" id="stepDot3">3</div>
+        </div>
+        <div class="step-labels">
+            <span>Step 1 購物車審核</span>
+            <span>Step 2 收件資料</span>
+            <span>Step 3 付款確認</span>
+        </div>
+    </div>
+
+    <div class="checkout-step" id="checkoutStep1">
+        <div id="checkoutCartList"></div>
+        <div class="checkout-total-row"><span>購物車小計</span><strong id="checkoutCartSubtotal">NT$ 0</strong></div>
+        <div class="checkout-actions">
+            <button class="btn" onclick="exitCheckout()">繼續購物</button>
+            <button class="btn btn-full" onclick="goToCheckoutStep(2)">下一步 Next</button>
+        </div>
+    </div>
+
+    <div class="checkout-step" id="checkoutStep2">
+        <div id="checkoutLoginGate" class="checkout-login-gate" style="display:none;">
+            請先登入/註冊會員後再繼續結帳。
+            <div style="margin-top:8px;"><button class="btn checkout-inline-btn" onclick="openMemberModal()">登入 / 註冊</button></div>
+        </div>
+        <div class="checkout-form">
+            <div class="form-group"><label>收件人姓名 *</label><input type="text" id="recipientName"></div>
+            <div class="form-group"><label>收件人電話 *</label><input type="tel" id="recipientPhone" placeholder="09xxxxxxxx"></div>
+            <div class="form-group">
+                <label>送貨方式</label>
+                <div class="checkout-shipping-fixed">
+                    <label><input type="radio" checked disabled> 台灣本島 7-11 到店取貨</label>
+                    <div class="checkout-shipping-meta">（免運費・不付款・3-5 天內取件）</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>選擇取貨門市 * <span class="required-badge">必選</span></label>
+                <div id="storeSelectionContainer">
+                    <button id="openEMapBtn" class="btn btn-full checkout-inline-btn" type="button">選擇 7-11 門市</button>
+                    <div class="checkout-store-info" id="selectedStoreInfo" style="display:none;">
+                        <div><strong>已選擇門市</strong></div>
+                        <div>門市名稱：<span id="storeName"></span></div>
+                        <div>地址：<span id="storeAddress"></span></div>
+                        <div>電話：<span id="storePhone"></span></div>
+                        <div>門市編號：<span id="storeCode"></span></div>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="cvsStoreID">
+            <input type="hidden" id="cvsStoreName">
+            <input type="hidden" id="cvsStoreAddress">
+            <input type="hidden" id="cvsStorePhone">
+            <div class="checkout-total-row"><span>運費</span><strong id="checkoutShippingFeeLabel">NT$ 0（免運）</strong></div>
+            <div class="checkout-error" id="checkoutStep2Error"></div>
+        </div>
+        <div class="checkout-actions">
+            <button class="btn" onclick="goToCheckoutStep(1)">上一步 Back</button>
+            <button class="btn btn-full" onclick="goToCheckoutStep(3)">下一步 Next</button>
+        </div>
+    </div>
+
+    <div class="checkout-step" id="checkoutStep3">
+        <div class="checkout-card order-summary">
+            <h3 style="font-size:0.95rem; margin-bottom:10px;">訂單摘要</h3>
+            <div id="summaryItems"></div>
+            <div id="checkoutCouponBlock" style="display:none; margin-top:12px;">
+                <label style="font-size:0.85rem; display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="useCouponCheckbox" onchange="updateCheckoutSummary()"> 使用購物金（可用 NT$ <span id="checkoutCouponBalance">0</span>）
+                </label>
+                <div class="form-group" style="margin-top:8px;">
+                    <input type="number" id="couponUseAmount" min="0" value="0" oninput="updateCheckoutSummary()" placeholder="輸入使用金額">
+                </div>
+            </div>
+            <div class="checkout-summary-row"><span>商品小計</span><span id="subtotal">NT$0</span></div>
+            <div class="checkout-summary-row"><span>運費</span><span id="summaryShipping">NT$0（免運）</span></div>
+            <div class="checkout-summary-row" id="couponLine" style="display:none;"><span>購物金折扣</span><span id="couponDiscount">-NT$0</span></div>
+            <div class="checkout-summary-row final"><span>最終金額</span><span id="finalAmount">NT$0</span></div>
+            <div class="checkout-store-info" id="checkoutSummaryStoreInfo" style="display:none; margin-top: 12px;">
+                <div><strong id="summaryStoreName"></strong></div>
+                <div id="summaryStoreAddress"></div>
+                <div id="summaryStorePhone"></div>
+            </div>
+            <div class="checkout-error" id="checkoutStep3Error"></div>
+        </div>
+        <div class="checkout-actions">
+            <button class="btn" onclick="goToCheckoutStep(2)">上一步 Back</button>
+            <button class="btn btn-full" id="paymentBtn" onclick="submitEcpayPayment()">確認付款</button>
+        </div>
+    </div>
+
+    <div class="checkout-complete" id="checkoutComplete">
+        <h3>訂單已完成，感謝您的購買！</h3>
+        <p style="font-size:0.85rem; margin-bottom:10px;">訂單編號：<span id="checkoutOrderNo">-</span></p>
+        <button class="btn checkout-inline-btn" onclick="exitCheckout()">返回首頁</button>
+    </div>
+</div>
+
+<div class="emap-modal" id="eMapModal">
+    <div class="emap-modal-content">
+        <div class="emap-modal-header">
+            <strong>選擇 7-11 門市</strong>
+            <button type="button" class="btn checkout-inline-btn" onclick="closeEMapModal()">關閉</button>
+        </div>
+        <div id="eMapMount"></div>
+    </div>
+</div>
+
+<!-- 商品詳情頁覆蓋層 -->
+<div id="productDetailOverlay">
+    <div class="product-detail-container">
+        <span class="product-detail-back" onclick="closeProductDetail()">&#8592; 返回首頁</span>
+        <img id="detailMainImg" class="product-detail-main-img" src="" alt="Product Image">
+        <div class="product-detail-thumbnails" id="detailThumbnails"></div>
+        <div class="product-detail-info">
+            <div class="product-detail-name" id="detailName"></div>
+            <div class="product-detail-price" id="detailPrice"></div>
+            <div class="product-detail-size">
+                <label>尺寸 Size</label>
+                <select id="detailSizeSelect">
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                </select>
+            </div>
+            <div class="product-detail-actions">
+                <button class="btn btn-full" onclick="addToCartFromDetail()">加入購物車 Add to Bag</button>
+                <button class="btn" onclick="buyNow()">直接購買 Buy Now</button>
+            </div>
+        </div>
+        <div class="detail-scroll-images" id="detailScrollImages"></div>
+    </div>
+</div>
+
+<div id="toast">操作成功</div>
+
+
+<script>
+    // EmailJS 初始化
+    try { emailjs.init('m1fvagOxoo5vaDvX1'); } catch(e) {}
+
+    // 商品資料
+    const PRODUCTS = {
+        '1': {
+            name: 'Cyber Butterfly Necklace',
+            price: 2580,
+            images: [
+                'images/S__81002508_0.jpg',
+                'images/S__81002509_0.jpg',
+                'images/S__81002510_0.jpg',
+                'images/S__81002511_0.jpg'
+            ]
+        }
+    };
+
+    let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
+    let messy_users = JSON.parse(localStorage.getItem('messy_users')) || {};
+    let currentUser = null;
+    let _fpVerifiedEmail = null;
+    let _currentDetailProduct = null;
+    const ECPAY_CONFIG = {
+        merchantId: '3483323',
+        netlifyUrl: 'https://messyttl2i.netlify.app',
+        siteUrl: 'https://messyttl2i.github.io'
+    };
+    const EMAP_TIMEOUT_MS = 5 * 60 * 1000;
+    let checkoutStep = 1;
+    const checkoutFormData = {
+        name: '',
+        phone: '',
+        shipping: 'seven-eleven-pickup',
+        storeId: '',
+        storeInfo: null,
+        useCoupon: false,
+        couponAmount: 0
+    };
+    let eMapTimeoutTimer = null;
+
+    // Session lives in sessionStorage — cleared when browser is closed (manual login required)
+    (function initSession() {
+        const session = JSON.parse(sessionStorage.getItem('messy_session'));
+        if (session && session.email && messy_users[session.email]) {
+            currentUser = messy_users[session.email];
+        }
+    })();
+
+    window.onload = () => {
+        updateCartUI();
+        updateMemberUI();
+        initCheckoutFromQuery();
+        const openBtn = document.getElementById('openEMapBtn');
+        if (openBtn) openBtn.addEventListener('click', openEMapSelector);
+    };
+
+    window.addEventListener('message', (event) => {
+        if (!event || !event.data || event.data.type !== 'CVS_SELECTION') return;
+        const selected = event.data;
+        document.getElementById('cvsStoreID').value = selected.StoreID || '';
+        document.getElementById('cvsStoreName').value = selected.StoreName || '';
+        document.getElementById('cvsStoreAddress').value = selected.StoreAddress || '';
+        document.getElementById('cvsStorePhone').value = selected.StorePhone || '';
+        checkoutFormData.storeId = selected.StoreID || '';
+        checkoutFormData.storeInfo = selected.StoreID ? {
+            id: selected.StoreID || '',
+            name: selected.StoreName || '',
+            address: selected.StoreAddress || '',
+            phone: selected.StorePhone || ''
+        } : null;
+        updateSelectedStoreDisplay(selected);
+        updateCheckoutSummary();
+        closeEMapModal();
+    });
+
+    // --- PBKDF2 Password Helpers ---
+    function generateSalt() {
+        const arr = new Uint8Array(16);
+        crypto.getRandomValues(arr);
+        return btoa(String.fromCharCode(...arr));
+    }
+
+    async function hashPassword(password, salt) {
+        const encoder = new TextEncoder();
+        const saltBytes = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw', encoder.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
+        );
+        const bits = await crypto.subtle.deriveBits(
+            { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+            keyMaterial, 256
+        );
+        return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function verifyPassword(password, salt, storedHash) {
+        const hash = await hashPassword(password, salt);
+        return hash === storedHash;
+    }
+
+    function togglePanel(id) { closeAll(); document.getElementById(id).classList.add('active'); document.getElementById('overlay').style.display='block'; }
+    function closeAll() { document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById('memberModal').style.display='none'; document.getElementById('overlay').style.display='none'; }
+    function openMemberModal() { document.getElementById('memberModal').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; updateMemberUI(); }
+
+    function updateMemberUI() {
+        if (currentUser) {
+            document.getElementById('formView').style.display = 'none';
+            document.getElementById('loggedInView').style.display = 'block';
+            document.getElementById('editProfileView').style.display = 'none';
+            document.getElementById('loginDot').style.display = 'block';
+            document.getElementById('displayUserName').innerText = currentUser.name || currentUser.email;
+            document.getElementById('displayUserEmail').innerText = currentUser.email;
+            const balance = currentUser.couponBalance != null ? currentUser.couponBalance : 0;
+            document.getElementById('couponBalanceAmount').innerText = balance;
+            document.getElementById('couponBalanceDisplay').style.display = balance > 0 ? 'inline-block' : 'none';
+        } else {
+            document.getElementById('formView').style.display = 'block';
+            document.getElementById('loggedInView').style.display = 'none';
+            document.getElementById('editProfileView').style.display = 'none';
+            document.getElementById('loginDot').style.display = 'none';
+            showRegisterForm();
+        }
+        syncCheckoutLoginState();
+    }
+
+    function showLoginForm() {
+        document.getElementById('registerForm').style.display = 'none';
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('forgotPasswordForm').style.display = 'none';
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('login_email').value = '';
+        document.getElementById('login_pw').value = '';
+    }
+
+    function showRegisterForm() {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'block';
+        document.getElementById('forgotPasswordForm').style.display = 'none';
+    }
+
+    function showForgotPasswordForm() {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'none';
+        document.getElementById('forgotPasswordForm').style.display = 'block';
+        document.getElementById('forgotPasswordStep1').style.display = 'block';
+        document.getElementById('forgotPasswordStep2').style.display = 'none';
+        document.getElementById('fp_email').value = '';
+        document.getElementById('fpEmailError').style.display = 'none';
+        _fpVerifiedEmail = null;
+    }
+
+    function handleForgotPasswordStep1() {
+        const email = document.getElementById('fp_email').value.trim();
+        const errEl = document.getElementById('fpEmailError');
+        if (!email) {
+            errEl.innerText = '請輸入您的 Email！';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errEl.innerText = '請輸入有效的 Email 格式！';
+            errEl.style.display = 'block';
+            return;
+        }
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        if (!users[email]) {
+            errEl.innerText = '此信箱尚未註冊';
+            errEl.style.display = 'block';
+            return;
+        }
+        _fpVerifiedEmail = email;
+        errEl.style.display = 'none';
+        document.getElementById('fp_new_pw').value = '';
+        document.getElementById('fp_confirm_pw').value = '';
+        document.getElementById('fpResetError').style.display = 'none';
+        document.getElementById('forgotPasswordStep1').style.display = 'none';
+        document.getElementById('forgotPasswordStep2').style.display = 'block';
+    }
+
+    async function handleForgotPasswordStep2() {
+        const newPw = document.getElementById('fp_new_pw').value;
+        const confirmPw = document.getElementById('fp_confirm_pw').value;
+        const errEl = document.getElementById('fpResetError');
+        if (!newPw) {
+            errEl.innerText = '請輸入新密碼！';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (newPw.length < 6) {
+            errEl.innerText = '密碼至少需要 6 個字元！';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (newPw !== confirmPw) {
+            errEl.innerText = '兩次輸入的密碼不一致！';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (!_fpVerifiedEmail) {
+            errEl.innerText = '發生錯誤，請重新操作。';
+            errEl.style.display = 'block';
+            return;
+        }
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        if (!users[_fpVerifiedEmail]) {
+            errEl.innerText = '發生錯誤，請重新操作。';
+            errEl.style.display = 'block';
+            return;
+        }
+        try {
+            const salt = generateSalt();
+            const passwordHash = await hashPassword(newPw, salt);
+            users[_fpVerifiedEmail] = { ...users[_fpVerifiedEmail], passwordHash, salt };
+            localStorage.setItem('messy_users', JSON.stringify(users));
+            messy_users = users;
+            if (currentUser && currentUser.email === _fpVerifiedEmail) {
+                sessionStorage.removeItem('messy_session');
+                currentUser = null;
+            }
+            _fpVerifiedEmail = null;
+            showToast('密碼已更新，請重新登入');
+            setTimeout(() => {
+                document.getElementById('forgotPasswordForm').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('loginError').style.display = 'none';
+            }, 1800);
+        } catch(e) {
+            errEl.innerText = '更新失敗，請再試一次。';
+            errEl.style.display = 'block';
+        }
+    }
+
+    async function handleLogin() {
+        const email = document.getElementById('login_email').value.trim();
+        const password = document.getElementById('login_pw').value;
+        const errorEl = document.getElementById('loginError');
+
+        if (!email || !password) {
+            errorEl.innerText = 'Email 與密碼是必須填寫的！';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        const userData = users[email];
+
+        if (!userData) {
+            errorEl.innerText = 'Email 或密碼不正確，請再試一次。';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            const isValid = await verifyPassword(password, userData.salt, userData.passwordHash);
+            if (isValid) {
+                if (userData.couponBalance == null) {
+                    userData.couponBalance = 0;
+                    users[email] = userData;
+                    localStorage.setItem('messy_users', JSON.stringify(users));
+                }
+                currentUser = userData;
+                messy_users = users;
+                sessionStorage.setItem('messy_session', JSON.stringify({ email }));
+                errorEl.style.display = 'none';
+                showToast('登入成功！歡迎回來');
+                updateMemberUI();
+                setTimeout(() => closeAll(), 1500);
+            } else {
+                errorEl.innerText = 'Email 或密碼不正確，請再試一次。';
+                errorEl.style.display = 'block';
+            }
+        } catch(e) {
+            errorEl.innerText = '登入失敗，請再試一次。';
+            errorEl.style.display = 'block';
+        }
+    }
+
+    // --- handleRegister 邏輯 ---
+    async function handleRegister() {
+        const name = document.getElementById('reg_name').value.trim();
+        const email = document.getElementById('reg_email').value.trim();
+        const password = document.getElementById('reg_pw').value;
+        const phone = document.getElementById('reg_phone').value.trim();
+        const gender = document.getElementById('reg_gender').value;
+        const birthYear = document.getElementById('reg_birth_year').value.trim();
+        const birthMonth = document.getElementById('reg_birth_month').value.trim();
+        const birthDay = document.getElementById('reg_birth_day').value.trim();
+        const btn = document.getElementById('submitBtn');
+
+        if(!name || !email || !password) {
+            alert("姓名、Email 與密碼是必須填寫的！");
+            return;
+        }
+        if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            alert("請輸入有效的 Email 格式！");
+            return;
+        }
+        if(password.length < 6) {
+            alert("密碼至少需要 6 個字元！");
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        if (users[email]) {
+            alert("此信箱已存在");
+            return;
+        }
+
+        const birth = (birthYear && birthMonth && birthDay) ? `${birthYear}-${String(birthMonth).padStart(2,'0')}-${String(birthDay).padStart(2,'0')}` : '';
+
+        btn.innerText = "正在建立帳號...";
+        btn.disabled = true;
+
+        try {
+            const salt = generateSalt();
+            const passwordHash = await hashPassword(password, salt);
+            const userData = { name, email, passwordHash, salt, phone, gender, birth, couponBalance: 50 };
+            users[email] = userData;
+            localStorage.setItem('messy_users', JSON.stringify(users));
+            messy_users = users;
+            currentUser = userData;
+            sessionStorage.setItem('messy_session', JSON.stringify({ email }));
+            updateMemberUI();
+            setTimeout(() => closeAll(), 1500);
+            document.getElementById('reg_name').value = '';
+            document.getElementById('reg_email').value = '';
+            document.getElementById('reg_pw').value = '';
+            document.getElementById('reg_phone').value = '';
+            document.getElementById('reg_gender').value = '';
+            document.getElementById('reg_birth_year').value = '';
+            document.getElementById('reg_birth_month').value = '';
+            document.getElementById('reg_birth_day').value = '';
+
+            // 發送歡迎信（EmailJS）
+            try {
+                await emailjs.send('service_pzf7lvt', 'template_lsph3zp', {
+                    user_name: name,
+                    user_email: email,
+                    coupon_amount: 50,
+                    site_url: 'https://messyttl2i.github.io/'
+                });
+                showToast("註冊成功！歡迎信已發送");
+            } catch(mailErr) {
+                showToast("註冊成功，但歡迎信發送失敗（請聯絡客服）");
+                console.warn('歡迎信發送失敗:', mailErr);
+            }
+        } catch(e) {
+            alert("註冊失敗，請再試一次。");
+        } finally {
+            btn.innerText = '立即加入！';
+            btn.disabled = false;
+        }
+    }
+
+    function handleLogout() {
+        sessionStorage.removeItem('messy_session');
+        currentUser = null;
+        updateMemberUI();
+        showToast("已成功登出");
+    }
+
+    // --- 購物車與輪播保留 ---
+    function addToCart(id, name, price, img, size) {
+        const cartId = size ? `${id}_${size}` : id;
+        const displayName = size ? `${name} (${size})` : name;
+        const existing = cart.find(item => item.id === cartId);
+        if (existing) { existing.qty += 1; } else { cart.push({ id: cartId, name: displayName, price, img, qty: 1 }); }
+        localStorage.setItem('messy_cart', JSON.stringify(cart));
+        updateCartUI(); togglePanel('cart-drawer');
+    }
+    function updateCartUI() {
+        const list = document.getElementById('cartItemsList');
+        const count = document.getElementById('cartCount');
+        const total = document.getElementById('cartTotalPrice');
+        let totalPrice = 0; let totalCount = 0; list.innerHTML = '';
+        cart.forEach((item) => {
+            totalPrice += item.price * item.qty; totalCount += item.qty;
+            list.innerHTML += `<div class="cart-item">
+                <img src="${item.img}" width="50" style="flex-shrink:0;">
+                <div class="cart-item-info">
+                    <b>${item.name}</b><br>
+                    <span style="font-size:0.8rem;">NT$ ${item.price.toLocaleString()}</span>
+                    <div class="cart-qty-controls">
+                        <button class="cart-qty-btn" onclick="updateQuantity('${item.id}', -1)">&#8722;</button>
+                        <span class="cart-qty-num">${item.qty}</span>
+                        <button class="cart-qty-btn" onclick="updateQuantity('${item.id}', 1)">&#43;</button>
+                        <button class="cart-remove-btn" onclick="removeFromCart('${item.id}')">刪除</button>
+                    </div>
+                </div>
+            </div>`;
+        });
+        count.innerText = totalCount; total.innerText = `NT$ ${totalPrice.toLocaleString()}`;
+        renderCheckoutCart();
+    }
+    function updateQuantity(id, delta) {
+        const item = cart.find(i => i.id === id);
+        if (!item) return;
+        item.qty += delta;
+        if (item.qty <= 0) { cart = cart.filter(i => i.id !== id); }
+        localStorage.setItem('messy_cart', JSON.stringify(cart));
+        updateCartUI();
+    }
+    function removeFromCart(id) {
+        cart = cart.filter(i => i.id !== id);
+        localStorage.setItem('messy_cart', JSON.stringify(cart));
+        updateCartUI();
+    }
+
+    function escapeHtml(text) {
+        return String(text || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function parseCartItemName(name) {
+        const match = String(name || '').match(/^(.*)\s\(([^)]+)\)$/);
+        return match ? { baseName: match[1], size: match[2] } : { baseName: String(name || ''), size: '-' };
+    }
+
+    function getCartSubtotal() {
+        return cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    }
+
+    function getShippingFee() {
+        return 0;
+    }
+
+    function startCheckout() {
+        closeAll();
+        if (!cart.length) {
+            showToast('購物車目前是空的');
+            return;
+        }
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('checkoutPage').style.display = 'block';
+        checkoutStep = 1;
+        fillCheckoutForm();
+        renderCheckoutCart();
+        goToCheckoutStep(1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function exitCheckout() {
+        document.getElementById('checkoutPage').style.display = 'none';
+        document.getElementById('checkoutComplete').style.display = 'none';
+        document.getElementById('mainContainer').style.display = '';
+        document.getElementById('checkoutStep3Error').style.display = 'none';
+        checkoutStep = 1;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderCheckoutCart() {
+        const cartList = document.getElementById('checkoutCartList');
+        const subtotalEl = document.getElementById('checkoutCartSubtotal');
+        if (!cartList || !subtotalEl) return;
+        if (!cart.length) {
+            cartList.innerHTML = '<div class="checkout-card">購物車沒有商品，請先加入商品再結帳。</div>';
+            subtotalEl.innerText = 'NT$ 0';
+            return;
+        }
+        cartList.innerHTML = cart.map((item) => {
+            const parsed = parseCartItemName(item.name);
+            const subtotal = item.price * item.qty;
+            return `<div class="checkout-card checkout-grid">
+                <img class="checkout-thumb" src="${escapeHtml(item.img)}" alt="${escapeHtml(parsed.baseName)}">
+                <div>
+                    <div class="checkout-item-name">${escapeHtml(parsed.baseName)}</div>
+                    <div class="checkout-item-meta">尺寸：${escapeHtml(parsed.size)}<br>單價：NT$ ${item.price.toLocaleString()}</div>
+                    <div class="cart-qty-controls" style="margin-top:10px;">
+                        <button class="cart-qty-btn" onclick="updateQuantity('${item.id}', -1)">&#8722;</button>
+                        <span class="cart-qty-num">${item.qty}</span>
+                        <button class="cart-qty-btn" onclick="updateQuantity('${item.id}', 1)">&#43;</button>
+                        <button class="cart-remove-btn" onclick="removeFromCart('${item.id}')">刪除</button>
+                    </div>
+                </div>
+                <div class="checkout-item-subtotal">NT$ ${subtotal.toLocaleString()}</div>
+            </div>`;
+        }).join('');
+        subtotalEl.innerText = `NT$ ${getCartSubtotal().toLocaleString()}`;
+        updateCheckoutSummary();
+    }
+
+    function syncCheckoutLoginState() {
+        const gate = document.getElementById('checkoutLoginGate');
+        if (!gate) return;
+        gate.style.display = currentUser ? 'none' : 'block';
+        const couponBlock = document.getElementById('checkoutCouponBlock');
+        if (!couponBlock) return;
+        const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
+        document.getElementById('checkoutCouponBalance').innerText = balance;
+        couponBlock.style.display = balance > 0 ? 'block' : 'none';
+    }
+
+    function renderStoreInfo(targetId, store) {
+        const infoEl = document.getElementById(targetId);
+        if (!infoEl) return;
+        if (!store) {
+            infoEl.style.display = 'none';
+            infoEl.classList.remove('selected');
+            infoEl.innerHTML = '';
+            return;
+        }
+        infoEl.style.display = 'block';
+        infoEl.classList.add('selected');
+        infoEl.innerHTML = `<div><strong>已選擇門市</strong></div>
+            <div>門市：${escapeHtml(store.name)}</div>
+            <div>地址：${escapeHtml(store.address)}</div>
+            <div>電話：${escapeHtml(store.phone)}</div>
+            <div>門市編號：${escapeHtml(store.id)}</div>`;
+    }
+
+    function updateSelectedStoreDisplay(storeData) {
+        const selectedStoreInfo = document.getElementById('selectedStoreInfo');
+        if (!selectedStoreInfo) return;
+        if (!storeData || !storeData.StoreID) {
+            selectedStoreInfo.style.display = 'none';
+            return;
+        }
+        document.getElementById('storeName').innerText = storeData.StoreName || '';
+        document.getElementById('storeAddress').innerText = storeData.StoreAddress || '';
+        document.getElementById('storePhone').innerText = storeData.StorePhone || '';
+        document.getElementById('storeCode').innerText = storeData.StoreID || '';
+        selectedStoreInfo.style.display = 'block';
+    }
+
+    function fillCheckoutForm() {
+        if (currentUser) {
+            checkoutFormData.name = checkoutFormData.name || currentUser.name || '';
+            checkoutFormData.phone = checkoutFormData.phone || currentUser.phone || '';
+        }
+        document.getElementById('recipientName').value = checkoutFormData.name;
+        document.getElementById('recipientPhone').value = checkoutFormData.phone;
+        document.getElementById('cvsStoreID').value = checkoutFormData.storeId || '';
+        document.getElementById('cvsStoreName').value = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.name : '';
+        document.getElementById('cvsStoreAddress').value = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.address : '';
+        document.getElementById('cvsStorePhone').value = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.phone : '';
+        updateSelectedStoreDisplay({
+            StoreID: checkoutFormData.storeId || '',
+            StoreName: checkoutFormData.storeInfo ? checkoutFormData.storeInfo.name : '',
+            StoreAddress: checkoutFormData.storeInfo ? checkoutFormData.storeInfo.address : '',
+            StorePhone: checkoutFormData.storeInfo ? checkoutFormData.storeInfo.phone : ''
+        });
+        document.getElementById('useCouponCheckbox').checked = checkoutFormData.useCoupon;
+        document.getElementById('couponUseAmount').value = checkoutFormData.couponAmount || 0;
+        syncCheckoutLoginState();
+    }
+
+    function saveCheckoutForm() {
+        checkoutFormData.name = document.getElementById('recipientName').value.trim();
+        const rawPhone = document.getElementById('recipientPhone').value.trim();
+        const normalizedDigits = rawPhone.replace(/[^\d]/g, '');
+        checkoutFormData.phone = normalizedDigits;
+        document.getElementById('recipientPhone').value = normalizedDigits;
+        checkoutFormData.shipping = 'seven-eleven-pickup';
+        checkoutFormData.storeId = document.getElementById('cvsStoreID').value;
+        const storeName = document.getElementById('cvsStoreName').value;
+        const storeAddress = document.getElementById('cvsStoreAddress').value;
+        const storePhone = document.getElementById('cvsStorePhone').value;
+        checkoutFormData.storeInfo = checkoutFormData.storeId ? {
+            id: checkoutFormData.storeId,
+            name: storeName,
+            address: storeAddress,
+            phone: storePhone
+        } : null;
+        checkoutFormData.useCoupon = document.getElementById('useCouponCheckbox').checked;
+        checkoutFormData.couponAmount = parseInt(document.getElementById('couponUseAmount').value || '0', 10) || 0;
+    }
+
+    function goToCheckoutStep(step) {
+        if (step === 2 && !cart.length) {
+            showToast('購物車沒有商品');
+            return;
+        }
+        if (step === 3 && !validateStep2()) return;
+        checkoutStep = step;
+        document.querySelectorAll('.checkout-step').forEach((el) => el.classList.remove('active'));
+        const stepEl = document.getElementById(`checkoutStep${step}`);
+        if (stepEl) stepEl.classList.add('active');
+        [1, 2, 3].forEach((n) => document.getElementById(`stepDot${n}`).classList.toggle('active', n <= step));
+        updateCheckoutSummary();
+    }
+
+    function validateStep2() {
+        if (!currentUser) {
+            const error = document.getElementById('checkoutStep2Error');
+            error.innerText = '請先登入/註冊會員後再繼續結帳。';
+            error.style.display = 'block';
+            return false;
+        }
+        saveCheckoutForm();
+        const error = document.getElementById('checkoutStep2Error');
+        error.style.display = 'none';
+        if (!checkoutFormData.name || !checkoutFormData.phone || !checkoutFormData.storeInfo) {
+            error.innerText = '請完整填寫收件人姓名、電話與 7-11 門市。';
+            error.style.display = 'block';
+            return false;
+        }
+        const phoneValid = /^\d{10}$/.test(checkoutFormData.phone);
+        if (!phoneValid) {
+            error.innerText = '電話格式不正確，請重新輸入。';
+            error.style.display = 'block';
+            return false;
+        }
+        return true;
+    }
+
+    function updateCheckoutSummary() {
+        if (!document.getElementById('checkoutPage')) return;
+        saveCheckoutForm();
+        const shippingFee = getShippingFee();
+        const safeShippingFee = Number(shippingFee) || 0;
+        const shippingLabel = `NT$ ${safeShippingFee.toLocaleString()}（免運）`;
+        document.getElementById('checkoutShippingFeeLabel').innerText = shippingLabel;
+        const itemsTotal = getCartSubtotal();
+        const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
+        const canUseCoupon = checkoutFormData.useCoupon && balance > 0;
+        const maxCoupon = Math.min(balance, itemsTotal + safeShippingFee);
+        let couponValue = canUseCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), maxCoupon) : 0;
+        document.getElementById('couponUseAmount').value = couponValue;
+        const finalAmount = Math.max(0, itemsTotal + safeShippingFee - couponValue);
+        const finalLabel = `NT$${finalAmount.toLocaleString()}`;
+        const couponLabel = `-NT$${couponValue.toLocaleString()}`;
+
+        document.getElementById('subtotal').innerText = `NT$${itemsTotal.toLocaleString()}`;
+        document.getElementById('summaryShipping').innerText = 'NT$0（免運）';
+        document.getElementById('couponDiscount').innerText = couponLabel;
+        document.getElementById('couponLine').style.display = couponValue > 0 ? 'flex' : 'none';
+        document.getElementById('finalAmount').innerText = finalLabel;
+
+        const summaryItems = document.getElementById('summaryItems');
+        if (summaryItems) {
+            summaryItems.innerHTML = cart.map((item) => {
+                const parsed = parseCartItemName(item.name);
+                return `<div class="checkout-summary-row"><span>${escapeHtml(parsed.baseName)} (${escapeHtml(parsed.size)}) x ${item.qty}</span><span>NT$ ${(item.price * item.qty).toLocaleString()}</span></div>`;
+            }).join('');
+        }
+        const summaryStoreBox = document.getElementById('checkoutSummaryStoreInfo');
+        summaryStoreBox.style.display = checkoutFormData.storeInfo ? 'block' : 'none';
+        document.getElementById('summaryStoreName').innerText = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.name : '';
+        document.getElementById('summaryStoreAddress').innerText = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.address : '';
+        document.getElementById('summaryStorePhone').innerText = checkoutFormData.storeInfo ? checkoutFormData.storeInfo.phone : '';
+    }
+
+    function buildItemNameForEcpay() {
+        const items = cart.map((item) => `${item.name}x${item.qty}`);
+        return items.join('#').slice(0, 200) || 'MessyTT&L2i 商品';
+    }
+
+    function generateTradeNo() {
+        const nowPart = Date.now().toString().slice(-10);
+        const randomArr = new Uint8Array(3);
+        crypto.getRandomValues(randomArr);
+        const randPart = Array.from(randomArr).map((v) => String(v % 10)).join('');
+        return `MSY${nowPart}${randPart}`;
+    }
+
+    function getMerchantTradeDate() {
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    
+function getFunctionBaseUrl() {
+    return location.origin;
+}
+
+    function calculateFinalAmount() {
+        const shippingFee = getShippingFee() || 0;
+        const itemsTotal = getCartSubtotal();
+        const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
+        const couponValue = checkoutFormData.useCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), Math.min(balance, itemsTotal + shippingFee)) : 0;
+        return Math.max(0, itemsTotal + shippingFee - couponValue);
+
+        
+   function getFunctionBaseUrl() {
+    return location.origin; // 直接用當前網址
+}
+        
+    function openEMapModal(data) {
+        const modal = document.getElementById('eMapModal');
+        const mount = document.getElementById('eMapMount');
+        if (!modal || !mount) return;
+        mount.innerHTML = '';
+        const iframe = document.createElement('iframe');
+        iframe.name = `emapFrame_${Date.now()}`;
+        mount.appendChild(iframe);
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = data.eMapUrl;
+        form.target = iframe.name;
+        Object.keys(data.formData || {}).forEach((key) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = data.formData[key];
+            form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        modal.style.display = 'flex';
+        if (eMapTimeoutTimer) clearTimeout(eMapTimeoutTimer);
+        eMapTimeoutTimer = setTimeout(() => {
+            closeEMapModal();
+            showToast('門市選擇逾時，請重新開啟地圖');
+        }, EMAP_TIMEOUT_MS);
+        form.submit();
+        form.remove();
+    }
+
+    function closeEMapModal() {
+        const modal = document.getElementById('eMapModal');
+        const mount = document.getElementById('eMapMount');
+        if (!modal || !mount) return;
+        modal.style.display = 'none';
+        mount.innerHTML = '';
+        if (eMapTimeoutTimer) {
+            clearTimeout(eMapTimeoutTimer);
+            eMapTimeoutTimer = null;
+        }
+    }
+
+    async function openEMapSelector() {
+        const trigger = document.getElementById('openEMapBtn');
+        if (trigger) trigger.disabled = true;
+        try {
+            const response = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-logistics-map`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    MerchantTradeNo: generateTradeNo(),
+                    Device: isMobile() ? 1 : 0
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error('MapInitFailed');
+            openEMapModal(data);
+        } catch (error) {
+            showToast('無法打開門市選擇，請稍後重試');
+        } finally {
+            if (trigger) trigger.disabled = false;
+        }
+    }
+
+    function clearCheckoutError() {
+        const err = document.getElementById('checkoutStep3Error');
+        err.style.display = 'none';
+        err.innerText = '';
+    }
+
+    async function submitEcpayPayment() {
+        clearCheckoutError();
+        if (!validateStep2()) {
+            goToCheckoutStep(2);
+            return;
+        }
+        if (!cart.length) {
+            showToast('購物車沒有商品');
+            return;
+        }
+        const payBtn = document.getElementById('paymentBtn');
+        payBtn.disabled = true;
+        payBtn.innerText = '處理中...';
+        try {
+            updateCheckoutSummary();
+            const shippingFee = getShippingFee() || 0;
+            const totalAmount = calculateFinalAmount();
+            if (totalAmount < 1) {
+                throw new Error('AmountTooLow');
+            }
+            const merchantTradeNo = generateTradeNo();
+            const currentOrigin = (location.origin && location.origin !== 'null') ? location.origin : '';
+            const allowedOrigins = [ECPAY_CONFIG.siteUrl];
+            if (currentOrigin && currentOrigin.startsWith('http')) allowedOrigins.push(currentOrigin);
+            const baseOrigin = allowedOrigins.includes(currentOrigin) ? currentOrigin : ECPAY_CONFIG.siteUrl;
+            const returnBase = `${baseOrigin}${location.pathname}`;
+            const logisticsResponse = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-create-logistics-order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    MerchantTradeNo: merchantTradeNo,
+                    MerchantTradeDate: getMerchantTradeDate(),
+                    TotalAmount: totalAmount,
+                    TradeDesc: '商品訂單',
+                    ItemName: buildItemNameForEcpay(),
+                    ReceiverName: checkoutFormData.name,
+                    ReceiverPhone: checkoutFormData.phone,
+                    CVSStoreID: checkoutFormData.storeId
+                })
+            });
+            const logisticsData = await logisticsResponse.json();
+            if (!logisticsResponse.ok || !logisticsData.success) {
+                throw new Error('LogisticsCreateFailed');
+            }
+
+            const paymentResponse = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    MerchantTradeNo: logisticsData.MerchantTradeNo || merchantTradeNo,
+                    MerchantTradeDate: getMerchantTradeDate(),
+                    TotalAmount: totalAmount,
+                    TradeDesc: 'MessyTT&L2i訂單',
+                    Items: cart.map((item) => ({ name: item.name, qty: item.qty })),
+                    ReturnURL: `${ECPAY_CONFIG.netlifyUrl}/.netlify/functions/ecpay-payment`,
+                    OrderResultURL: `${returnBase}?payment=success&order=${merchantTradeNo}`,
+                    AllPayLogisticsID: logisticsData.AllPayLogisticsID || '',
+                    CVSStoreID: checkoutFormData.storeId
+                })
+            });
+            const paymentData = await paymentResponse.json();
+            if (!paymentResponse.ok || !paymentData.success) {
+                throw new Error('PaymentCreateFailed');
+            }
+
+            const couponValue = checkoutFormData.useCoupon
+                ? Math.max(0, getCartSubtotal() + shippingFee - totalAmount)
+                : 0;
+            localStorage.setItem('messy_pending_order', JSON.stringify({
+                orderNo: merchantTradeNo,
+                couponValue,
+                shippingFee,
+                recipient: {
+                    name: checkoutFormData.name,
+                    phone: checkoutFormData.phone
+                },
+                pickupStore: checkoutFormData.storeInfo,
+                logisticsId: logisticsData.AllPayLogisticsID || '',
+                createdAt: Date.now()
+            }));
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = paymentData.paymentUrl;
+            Object.keys(paymentData.formData || {}).forEach((key) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = paymentData.formData[key];
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        } catch (e) {
+            const err = document.getElementById('checkoutStep3Error');
+            err.innerText = e && e.message === 'AmountTooLow'
+                ? '最終金額不得低於 NT$ 1，請調整購物金後重試。'
+                : '支付過程失敗，請稍後重試。';
+            err.style.display = 'block';
+        } finally {
+            payBtn.disabled = false;
+            payBtn.innerText = '確認付款';
+        }
+    }
+
+    function completeOrder(orderNo) {
+        const pendingRaw = localStorage.getItem('messy_pending_order');
+        const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+        if (pending && pending.couponValue && currentUser) {
+            const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+            const user = users[currentUser.email];
+            if (user) {
+                user.couponBalance = Math.max(0, (user.couponBalance || 0) - pending.couponValue);
+                users[currentUser.email] = user;
+                localStorage.setItem('messy_users', JSON.stringify(users));
+                messy_users = users;
+                currentUser = user;
+                sessionStorage.setItem('messy_session', JSON.stringify({ email: currentUser.email }));
+                updateMemberUI();
+            }
+        }
+        cart = [];
+        localStorage.setItem('messy_cart', JSON.stringify(cart));
+        localStorage.removeItem('messy_pending_order');
+        updateCartUI();
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('checkoutPage').style.display = 'block';
+        document.getElementById('checkoutStep1').classList.remove('active');
+        document.getElementById('checkoutStep2').classList.remove('active');
+        document.getElementById('checkoutStep3').classList.remove('active');
+        document.getElementById('checkoutComplete').style.display = 'block';
+        document.getElementById('checkoutOrderNo').innerText = orderNo || '-';
+        [1, 2, 3].forEach((n) => document.getElementById(`stepDot${n}`).classList.add('active'));
+    }
+
+    function initCheckoutFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const paymentStatus = params.get('payment');
+        if (paymentStatus === 'success') {
+            const orderNo = params.get('order') || '';
+            const pendingRaw = localStorage.getItem('messy_pending_order');
+            const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+            if (pending && pending.orderNo === orderNo) {
+                completeOrder(orderNo);
+            } else {
+                startCheckout();
+                goToCheckoutStep(3);
+                const err = document.getElementById('checkoutStep3Error');
+                err.innerText = '付款回傳驗證失敗，請重新嘗試付款。';
+                err.style.display = 'block';
+            }
+        } else if (paymentStatus === 'fail') {
+            startCheckout();
+            goToCheckoutStep(3);
+            const err = document.getElementById('checkoutStep3Error');
+            err.innerText = '付款失敗，請確認資訊後重試。';
+            err.style.display = 'block';
+        }
+  let autoplay;
+
+function startAutoplay(el) {
+    if (!el) return;
+    stopAutoplay();
+    autoplay = setInterval(() => {
+        el.scrollLeft += el.offsetWidth;
+        if (el.scrollLeft + el.offsetWidth >= el.scrollWidth) {
+            el.scrollLeft = 0;
+        }
+    }, 2500);
 function startAutoplay() {
     // Add your implementation here to start the autoplay behavior
 }
 
 function stopAutoplay() {
+    if (autoplay) {
+        clearInterval(autoplay);
+        autoplay = null;
+    }
     // Add your implementation here to stop the autoplay behavior
 }
 
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.innerText = msg;
+    t.style.opacity = '1';
+    setTimeout(() => (t.style.opacity = '0'), 2500);
 function showToast(message) {
     // Add your implementation here to display a toast message
 }
 
+    function handleEditProfile() {
+        if (!currentUser) return;
+        document.getElementById('edit_name').value = currentUser.name || '';
+        document.getElementById('edit_email').value = currentUser.email || '';
+        document.getElementById('edit_phone').value = currentUser.phone || '';
+        document.getElementById('edit_gender').value = currentUser.gender || '';
+        if (currentUser.birth) {
+            const parts = currentUser.birth.split('-');
+            document.getElementById('edit_birth_year').value = parts[0] || '';
+            document.getElementById('edit_birth_month').value = parts[1] ? parseInt(parts[1]) : '';
+            document.getElementById('edit_birth_day').value = parts[2] ? parseInt(parts[2]) : '';
+        } else {
+            document.getElementById('edit_birth_year').value = '';
+            document.getElementById('edit_birth_month').value = '';
+            document.getElementById('edit_birth_day').value = '';
+        }
+        document.getElementById('edit_new_pw').value = '';
+        document.getElementById('edit_confirm_pw').value = '';
+        document.getElementById('edit_current_pw').value = '';
+        document.getElementById('editProfileError').style.display = 'none';
+        document.getElementById('loggedInView').style.display = 'none';
+        document.getElementById('editProfileView').style.display = 'block';
+    }
+
+    async function saveProfileChanges() {
+        const errEl = document.getElementById('editProfileError');
+        const name = document.getElementById('edit_name').value.trim();
+        const phone = document.getElementById('edit_phone').value.trim();
+        const gender = document.getElementById('edit_gender').value;
+        const birthYear = document.getElementById('edit_birth_year').value.trim();
+        const birthMonth = document.getElementById('edit_birth_month').value.trim();
+        const birthDay = document.getElementById('edit_birth_day').value.trim();
+        const newPw = document.getElementById('edit_new_pw').value;
+        const confirmPw = document.getElementById('edit_confirm_pw').value;
+        const currentPw = document.getElementById('edit_current_pw').value;
+
+        if (!name) { errEl.innerText = '姓名為必填！'; errEl.style.display = 'block'; return; }
+        if (!currentPw) { errEl.innerText = '請輸入目前密碼以確認修改！'; errEl.style.display = 'block'; return; }
+
+        try {
+            const isValid = await verifyPassword(currentPw, currentUser.salt, currentUser.passwordHash);
+            if (!isValid) { errEl.innerText = '目前密碼不正確，請再試一次。'; errEl.style.display = 'block'; return; }
+        } catch(e) {
+            errEl.innerText = '驗證失敗，請再試一次。'; errEl.style.display = 'block'; return;
+        }
+
+        if (newPw) {
+            if (newPw.length < 6) { errEl.innerText = '新密碼至少需要 6 個字元！'; errEl.style.display = 'block'; return; }
+            if (newPw !== confirmPw) { errEl.innerText = '兩次輸入的新密碼不一致！'; errEl.style.display = 'block'; return; }
+        }
+
+        const birth = (birthYear && birthMonth && birthDay) ? `${birthYear}-${String(birthMonth).padStart(2,'0')}-${String(birthDay).padStart(2,'0')}` : '';
+        if (birth) {
+            const d = new Date(birth);
+            if (isNaN(d.getTime()) || d.getMonth() + 1 !== parseInt(birthMonth) || d.getDate() !== parseInt(birthDay)) {
+                errEl.innerText = '生日日期無效，請重新輸入！'; errEl.style.display = 'block'; return;
+            }
+        }
+
+        let updatedUser = { ...currentUser, name, phone, gender, birth };
+        if (newPw) {
+            try {
+                const salt = generateSalt();
+                const passwordHash = await hashPassword(newPw, salt);
+                updatedUser = { ...updatedUser, passwordHash, salt };
+            } catch(e) {
+                errEl.innerText = '密碼更新失敗，請再試一次。'; errEl.style.display = 'block'; return;
+            }
+        }
+
+        const users = JSON.parse(localStorage.getItem('messy_users')) || {};
+        users[currentUser.email] = updatedUser;
+        localStorage.setItem('messy_users', JSON.stringify(users));
+        messy_users = users;
+        currentUser = updatedUser;
+        sessionStorage.setItem('messy_session', JSON.stringify({ email: currentUser.email }));
+        showToast('會員資料已更新！');
+        errEl.style.display = 'none';
+        document.getElementById('editProfileView').style.display = 'none';
+        updateMemberUI();
+        showLoggedInView();
+    }
+
+    function filterProducts(category) {
+        const cards = document.querySelectorAll('.product-card');
+        cards.forEach(card => {
+            if (category === 'ALL' || card.dataset.category === category) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function addToCartById(id, size) {
+        const product = PRODUCTS[id];
+        if (!product) return;
+        addToCart(id, product.name, product.price, product.images[0], size);
+    }
+
+    // --- 商品詳情頁 ---
+    function showProductDetail(id) {
+        const product = PRODUCTS[id];
+        if (!product) return;
+        const { name, price, images } = product;
+        _currentDetailProduct = { id, name, price, images };
+        document.getElementById('detailName').innerText = name;
+        document.getElementById('detailPrice').innerText = `NT$ ${price.toLocaleString()}`;
+        document.getElementById('detailSizeSelect').value = 'S';
+
+        // 主圖
+        const mainImg = document.getElementById('detailMainImg');
+        mainImg.src = images[0];
+        mainImg.alt = name;
+
+        // 縮圖
+        const thumbsEl = document.getElementById('detailThumbnails');
+        thumbsEl.innerHTML = '';
+        images.forEach((src, idx) => {
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = `${name} ${idx + 1}`;
+            if (idx === 0) img.classList.add('active');
+            img.onclick = () => {
+                mainImg.src = src;
+                thumbsEl.querySelectorAll('img').forEach(t => t.classList.remove('active'));
+                img.classList.add('active');
+            };
+            thumbsEl.appendChild(img);
+        });
+
+        // 往下滑的完整圖片
+        const scrollEl = document.getElementById('detailScrollImages');
+        scrollEl.innerHTML = '';
+        images.forEach((src, idx) => {
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = `${name} ${idx + 1}`;
+            scrollEl.appendChild(img);
+        });
+
+        document.getElementById('productDetailOverlay').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        document.getElementById('productDetailOverlay').scrollTop = 0;
+    }
+
+    function closeProductDetail() {
+        document.getElementById('productDetailOverlay').style.display = 'none';
+        document.body.style.overflow = '';
+        _currentDetailProduct = null;
+    }
+
+    function addToCartFromDetail() {
+        if (!_currentDetailProduct) return;
+        const size = document.getElementById('detailSizeSelect').value;
+        const { id, name, price, images } = _currentDetailProduct;
+        addToCart(id, name, price, images[0], size);
+        showToast(`已加入購物車：${name} (${size})`);
+    }
 function getFunctionBaseUrl() {
     return location.origin; // Return the base URL of the current location
 }
 
+    function buyNow() {
+        if (!_currentDetailProduct) return;
+        const size = document.getElementById('detailSizeSelect').value;
+        const { id, name, price, images } = _currentDetailProduct;
+        addToCart(id, name, price, images[0], size);
+        closeProductDetail();
+        togglePanel('cart-drawer');
+    }
+</script>
+</body>
+</html>
 // Assume other content of index.html remains unchanged
