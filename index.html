@@ -900,14 +900,56 @@ async function openEMapSelector() {
         });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error('MapInitFailed');
-        openEMapModal(data);
-    } catch (error) {
-        showToast('無法打開門市選擇，請稍後重試');
-    } finally {
-        if (trigger) trigger.disabled = false;
-    }
+        // 用 popup 取代 iframe（避免 emap.pcsc.com.tw refused to connect）
+function openEMapModal(data) {
+  if (!data || !data.eMapUrl) {
+    showToast('門市地圖資料錯誤，請稍後再試');
+    return;
+  }
 }
 
+     // 開新視窗（避免 iframe 限制）
+  const popupName = `emapPopup_${Date.now()}`;
+  const popup = window.open('', popupName, 'width=980,height=760,noopener,noreferrer');
+
+  if (!popup) {
+    showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
+    return;
+  }
+
+  // 用 form POST 把參數送到綠界物流地圖入口
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = data.eMapUrl;
+  form.target = popupName;
+
+  Object.keys(data.formData || {}).forEach((key) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = data.formData[key];
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
+
+  // 可選：提示使用者在新視窗完成選店
+  showToast('請在新視窗完成 7-11 門市選擇');
+}
+
+// popup 模式下，closeEMapModal 可以變成簡單關閉遮罩（或不做事）
+function closeEMapModal() {
+  const modal = document.getElementById('eMapModal');
+  const mount = document.getElementById('eMapMount');
+  if (modal) modal.style.display = 'none';
+  if (mount) mount.innerHTML = '';
+  if (eMapTimeoutTimer) {
+    clearTimeout(eMapTimeoutTimer);
+    eMapTimeoutTimer = null;
+  }
+}
 async function submitEcpayPayment() {
     clearCheckoutError();
     if (!validateStep2()) { goToCheckoutStep(2); return; }
