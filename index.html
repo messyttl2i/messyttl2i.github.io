@@ -1169,10 +1169,10 @@
         const pad = (n) => String(n).padStart(2, '0');
         return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     }
-
-    function isMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
+    
+function getFunctionBaseUrl() {
+    return location.origin;
+}
 
     function calculateFinalAmount() {
         const shippingFee = getShippingFee() || 0;
@@ -1413,17 +1413,33 @@
             err.innerText = '付款失敗，請確認資訊後重試。';
             err.style.display = 'block';
         }
-    }
+  let autoplay;
 
-    let autoplay;
-    function startAutoplay(el) { autoplay = setInterval(() => { el.scrollLeft += el.offsetWidth; if(el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0; }, 1200); }
-    function stopAutoplay(el) { clearInterval(autoplay); }
-    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = '1'; setTimeout(() => t.style.opacity = '0', 2500); }
+function startAutoplay(el) {
+    if (!el) return;
+    stopAutoplay();
+    autoplay = setInterval(() => {
+        el.scrollLeft += el.offsetWidth;
+        if (el.scrollLeft + el.offsetWidth >= el.scrollWidth) {
+            el.scrollLeft = 0;
+        }
+    }, 2500);
+}
 
-    function showLoggedInView() {
-        document.getElementById('loggedInView').style.display = 'block';
-        document.getElementById('editProfileView').style.display = 'none';
+function stopAutoplay() {
+    if (autoplay) {
+        clearInterval(autoplay);
+        autoplay = null;
     }
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.innerText = msg;
+    t.style.opacity = '1';
+    setTimeout(() => (t.style.opacity = '0'), 2500);
+}
 
     function handleEditProfile() {
         if (!currentUser) return;
