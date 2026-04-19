@@ -1180,13 +1180,12 @@
         const balance = currentUser && currentUser.couponBalance ? currentUser.couponBalance : 0;
         const couponValue = checkoutFormData.useCoupon ? Math.min(Math.max(checkoutFormData.couponAmount, 0), Math.min(balance, itemsTotal + shippingFee)) : 0;
         return Math.max(0, itemsTotal + shippingFee - couponValue);
-    }
 
-   function getFunctionBaseUrl() 
+        
+   function getFunctionBaseUrl() {
     return location.origin; // 直接用當前網址
-    
-    }
-
+}
+        
     function openEMapModal(data) {
         const modal = document.getElementById('eMapModal');
         const mount = document.getElementById('eMapMount');
