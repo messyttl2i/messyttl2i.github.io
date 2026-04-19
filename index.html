@@ -892,22 +892,59 @@ function closeEMapModal() {
 async function openEMapSelector() {
     const trigger = document.getElementById('openEMapBtn');
     if (trigger) trigger.disabled = true;
+
     try {
         const response = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-logistics-map`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ MerchantTradeNo: generateTradeNo(), Device: isMobile() ? 1 : 0 })
+            body: JSON.stringify({
+                MerchantTradeNo: generateTradeNo(),
+                Device: isMobile() ? 1 : 0
+            })
         });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error('MapInitFailed');
-        // 用 popup 取代 iframe（避免 emap.pcsc.com.tw refused to connect）
-function openEMapModal(data) {
-  if (!data || !data.eMapUrl) {
-    showToast('門市地圖資料錯誤，請稍後再試');
-    return;
-  }
+
+        const { data, raw } = await parseJsonResponse(response);
+        if (!response.ok || !data.success) {
+            const detail = data && (data.message || data.error) ? (data.message || data.error) : raw;
+            throw new Error(detail || `MapInitFailed (${response.status})`);
+        }
+
+        openEMapModal(data);
+    } catch (error) {
+        console.error('openEMapSelector failed:', error);
+        showToast(`無法打開門市選擇：${(error && error.message) ? error.message : '請稍後重試'}`);
+    } finally {
+        if (trigger) trigger.disabled = false;
+    }
 }
 
+ async function parseJsonResponse(response) {
+    const raw = await response.text();
+    let data = null;
+    try {
+        data = raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        data = { success: false, message: raw || 'Invalid JSON response' };
+    }
+    return { data, raw };
+  // 輪播函式明確掛全域（避免 inline onmouseenter 找不到）
+}
+ window.startAutoplay = function (el) {
+    if (!el) return;
+    window.stopAutoplay();
+    window.autoplay = setInterval(() => {
+        el.scrollLeft += el.offsetWidth;
+        if (el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0;
+    }, 2500);
+};
+
+window.stopAutoplay = function () {
+    if (window.autoplay) {
+        clearInterval(window.autoplay);
+        window.autoplay = null;
+    }
+};
+ 
      // 開新視窗（避免 iframe 限制）
   const popupName = `emapPopup_${Date.now()}`;
   const popup = window.open('', popupName, 'width=980,height=760,noopener,noreferrer');
