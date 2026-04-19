@@ -658,16 +658,21 @@ async function handleRegister() {
 }
 
 function handleLogout() { sessionStorage.removeItem('messy_session'); currentUser = null; updateMemberUI(); showToast('已成功登出'); }
-function escapeHtml(text) { return String(text || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
-function parseCartItemName(name) { const match = String(name || '').match(/^(.*)\s\(([^)]+)\)$/); return match ? { baseName: match[1], size: match[2] } : { baseName: String(name || ''), size: '-' }; }
-function getCartSubtotal() { return cart.reduce((sum, item) => sum + (item.price * item.qty), 0); }
-function getShippingFee() { return 0; }
-function getFunctionBaseUrl() { return location.origin; }
-function isMobile() { return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
-function getMerchantTradeDate() { const now = new Date(); const pad = (n) => String(n).padStart(2, '0'); return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`; }
-function buildItemNameForEcpay() { return (cart.map((item) => `${item.name}x${item.qty}`).join('#').slice(0, 200)) || 'MessyTT&L2i 商品'; }
-function generateTradeNo() { const nowPart = Date.now().toString().slice(-10); const randomArr = new Uint8Array(3); crypto.getRandomValues(randomArr); const randPart = Array.from(randomArr).map((v) => String(v % 10)).join(''); return `MSY${nowPart}${randPart}`; }
-
+ function escapeHtml(text) { return String(text || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+ function parseCartItemName(name) { const match = String(name || '').match(/^(.*)\s\(([^)]+)\)$/); return match ? { baseName: match[1], size: match[2] } : { baseName: String(name || ''), size: '-' }; }
+ function getCartSubtotal() { return cart.reduce((sum, item) => sum + (item.price * item.qty), 0); }
+ function getShippingFee() { return 0; }
+function getFunctionBaseUrl() {
+    const origin = (location.origin || '').toLowerCase();
+    // GitHub Pages cannot execute Netlify Functions; call Netlify directly.
+    if (origin.includes('github.io')) return ECPAY_CONFIG.netlifyUrl;
+    return location.origin;
+}
+ function isMobile() { return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+ function getMerchantTradeDate() { const now = new Date(); const pad = (n) => String(n).padStart(2, '0'); return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`; }
+ function buildItemNameForEcpay() { return (cart.map((item) => `${item.name}x${item.qty}`).join('#').slice(0, 200)) || 'MessyTT&L2i 商品'; }
+ function generateTradeNo() { const nowPart = Date.now().toString().slice(-10); const randomArr = new Uint8Array(3); crypto.getRandomValues(randomArr); const randPart = Array.from(randomArr).map((v) => String(v % 10)).join(''); return `MSY${nowPart}${randPart}`; }
+ 
 function addToCart(id, name, price, img, size) {
     const cartId = size ? `${id}_${size}` : id;
     const displayName = size ? `${name} (${size})` : name;
