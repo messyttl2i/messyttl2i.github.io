@@ -918,26 +918,6 @@ async function openEMapSelector() {
     }
 }
 
- async function parseJsonResponse(response) {
-    const raw = await response.text();
-    let data = null;
-    try {
-        data = raw ? JSON.parse(raw) : {};
-    } catch (e) {
-        data = { success: false, message: raw || 'Invalid JSON response' };
-    }
-    return { data, raw };
-  // 輪播函式明確掛全域（避免 inline onmouseenter 找不到）
-}
- window.startAutoplay = function (el) {
-    if (!el) return;
-    window.stopAutoplay();
-    window.autoplay = setInterval(() => {
-        el.scrollLeft += el.offsetWidth;
-        if (el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0;
-    }, 2500);
-};
-
 window.stopAutoplay = function () {
     if (window.autoplay) {
         clearInterval(window.autoplay);
