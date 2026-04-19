@@ -854,17 +854,16 @@ function updateCheckoutSummary() {
 function clearCheckoutError() { const err = document.getElementById('checkoutStep3Error'); if (!err) return; err.style.display = 'none'; err.innerText = ''; }
 
 function openEMapModal(data) {
-    const modal = document.getElementById('eMapModal');
-    const mount = document.getElementById('eMapMount');
-    if (!modal || !mount) return;
-    mount.innerHTML = '';
-    const iframe = document.createElement('iframe');
-    iframe.name = `emapFrame_${Date.now()}`;
-    mount.appendChild(iframe);
+    const popupName = `emapPopup_${Date.now()}`;
+    const popup = window.open('', popupName, 'width=980,height=760,noopener,noreferrer');
+    if (!popup) {
+        showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
+        return;
+    }
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = data.eMapUrl;
-    form.target = iframe.name;
+    form.target = popupName;
     Object.keys(data.formData || {}).forEach((key) => {
         const input = document.createElement('input');
         input.type = 'hidden';
@@ -873,20 +872,25 @@ function openEMapModal(data) {
         form.appendChild(input);
     });
     document.body.appendChild(form);
-    modal.style.display = 'flex';
-    if (eMapTimeoutTimer) clearTimeout(eMapTimeoutTimer);
-    eMapTimeoutTimer = setTimeout(() => { closeEMapModal(); showToast('門市選擇逾時，請重新開啟地圖'); }, EMAP_TIMEOUT_MS);
     form.submit();
     form.remove();
+    showToast('請在新視窗完成 7-11 門市選擇');
 }
 
 function closeEMapModal() {
     const modal = document.getElementById('eMapModal');
     const mount = document.getElementById('eMapMount');
-    if (!modal || !mount) return;
-    modal.style.display = 'none';
-    mount.innerHTML = '';
+    if (modal) modal.style.display = 'none';
+    if (mount) mount.innerHTML = '';
     if (eMapTimeoutTimer) { clearTimeout(eMapTimeoutTimer); eMapTimeoutTimer = null; }
+}
+
+async function parseJsonResponse(response) {
+    const raw = await response.text();
+    let data = null;
+    try { data = raw ? JSON.parse(raw) : {}; }
+    catch (e) { data = { success: false, message: raw || 'Invalid JSON response' }; }
+    return { data, raw };
 }
 
 async function openEMapSelector() {
@@ -924,49 +928,7 @@ window.stopAutoplay = function () {
         window.autoplay = null;
     }
 };
- 
-     // 開新視窗（避免 iframe 限制）
-  const popupName = `emapPopup_${Date.now()}`;
-  const popup = window.open('', popupName, 'width=980,height=760,noopener,noreferrer');
 
-  if (!popup) {
-    showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
-    return;
-  }
-
-  // 用 form POST 把參數送到綠界物流地圖入口
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = data.eMapUrl;
-  form.target = popupName;
-
-  Object.keys(data.formData || {}).forEach((key) => {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = key;
-    input.value = data.formData[key];
-    form.appendChild(input);
-  });
-
-  document.body.appendChild(form);
-  form.submit();
-  form.remove();
-
-  // 可選：提示使用者在新視窗完成選店
-  showToast('請在新視窗完成 7-11 門市選擇');
-}
-
-// popup 模式下，closeEMapModal 可以變成簡單關閉遮罩（或不做事）
-function closeEMapModal() {
-  const modal = document.getElementById('eMapModal');
-  const mount = document.getElementById('eMapMount');
-  if (modal) modal.style.display = 'none';
-  if (mount) mount.innerHTML = '';
-  if (eMapTimeoutTimer) {
-    clearTimeout(eMapTimeoutTimer);
-    eMapTimeoutTimer = null;
-  }
-}
 async function submitEcpayPayment() {
     clearCheckoutError();
     if (!validateStep2()) { goToCheckoutStep(2); return; }
