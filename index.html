@@ -664,9 +664,16 @@ function handleLogout() { sessionStorage.removeItem('messy_session'); currentUse
  function getShippingFee() { return 0; }
 function getFunctionBaseUrl() {
     const origin = (location.origin || '').toLowerCase();
+    // Opened as local file, about:blank, or unknown origin: force Netlify endpoint.
+    if (!origin || origin === 'null' || location.protocol === 'file:') return ECPAY_CONFIG.netlifyUrl;
     // GitHub Pages cannot execute Netlify Functions; call Netlify directly.
     if (origin.includes('github.io')) return ECPAY_CONFIG.netlifyUrl;
     return location.origin;
+}
+
+function buildFunctionUrl(baseUrl, functionName) {
+    const safeBase = String(baseUrl || '').replace(/\/$/, '');
+    return `${safeBase}/.netlify/functions/${functionName}`;
 }
  function isMobile() { return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
  function getMerchantTradeDate() { const now = new Date(); const pad = (n) => String(n).padStart(2, '0'); return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`; }
@@ -898,22 +905,35 @@ async function openEMapSelector() {
     if (trigger) trigger.disabled = true;
 
     try {
-        const response = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-logistics-map`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                MerchantTradeNo: generateTradeNo(),
-                Device: isMobile() ? 1 : 0
-            })
-        });
+        const payload = {
+            MerchantTradeNo: generateTradeNo(),
+            Device: isMobile() ? 1 : 0
+        };
+        const candidateBases = Array.from(new Set([getFunctionBaseUrl(), ECPAY_CONFIG.netlifyUrl].filter(Boolean)));
+        let lastError = null;
+        let mapData = null;
 
-        const { data, raw } = await parseJsonResponse(response);
-        if (!response.ok || !data.success) {
-            const detail = data && (data.message || data.error) ? (data.message || data.error) : raw;
-            throw new Error(detail || `MapInitFailed (${response.status})`);
+        for (const base of candidateBases) {
+            try {
+                const response = await fetch(buildFunctionUrl(base, 'ecpay-logistics-map'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const { data, raw } = await parseJsonResponse(response);
+                if (!response.ok || !data.success) {
+                    const detail = data && (data.message || data.error) ? (data.message || data.error) : raw;
+                    throw new Error(detail || `MapInitFailed (${response.status})`);
+                }
+                mapData = data;
+                break;
+            } catch (err) {
+                lastError = err;
+            }
         }
 
-        openEMapModal(data);
+        if (!mapData) throw (lastError || new Error('MapInitFailed'));
+        openEMapModal(mapData);
     } catch (error) {
         console.error('openEMapSelector failed:', error);
         showToast(`無法打開門市選擇：${(error && error.message) ? error.message : '請稍後重試'}`);
