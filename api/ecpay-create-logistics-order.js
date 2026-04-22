@@ -1,8 +1,8 @@
 const crypto = require('crypto');
 
-const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID;
-const HASH_KEY = process.env.ECPAY_LOGISTICS_HASH_KEY || process.env.ECPAY_HASH_KEY;
-const HASH_IV = process.env.ECPAY_LOGISTICS_HASH_IV || process.env.ECPAY_HASH_IV;
+const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID || process.env.ECPAY_MERCHANTID || process.env.MERCHANT_ID;
+const HASH_KEY = process.env.ECPAY_LOGISTICS_HASH_KEY || process.env.ECPAY_HASH_KEY || process.env.ECPAY_HASHKEY;
+const HASH_IV = process.env.ECPAY_LOGISTICS_HASH_IV || process.env.ECPAY_HASH_IV || process.env.ECPAY_HASHIV;
 const SENDER_NAME = process.env.ECPAY_SENDER_NAME || 'MessyTTL2i';
 const SENDER_PHONE = String(process.env.ECPAY_SENDER_PHONE || '').replace(/[^\d]/g, '');
 const ECPAY_LOGISTICS_CREATE_URL = process.env.ECPAY_LOGISTICS_CREATE_URL || 'https://logistics.ecpay.com.tw/Express/Create';
