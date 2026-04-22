@@ -970,31 +970,33 @@ async function submitEcpayPayment() {
         const logisticsResponse = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-create-logistics-order`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ MerchantTradeNo: merchantTradeNo, MerchantTradeDate: getMerchantTradeDate(), TotalAmount: totalAmount, TradeDesc: '商品訂單', ItemName: buildItemNameForEcpay(), ReceiverName: checkoutFormData.name, ReceiverPhone: checkoutFormData.phone, CVSStoreID: checkoutFormData.storeId })
+            body: JSON.stringify({ MerchantTradeNo: merchantTradeNo, TotalAmount: totalAmount, TradeDesc: '商品訂單', ItemName: buildItemNameForEcpay(), ReceiverName: checkoutFormData.name, ReceiverPhone: checkoutFormData.phone, CVSStoreID: checkoutFormData.storeId })
         });
         const logisticsData = await logisticsResponse.json();
         if (!logisticsResponse.ok || !logisticsData.success) throw new Error('LogisticsCreateFailed');
-        const paymentResponse = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-payment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ MerchantTradeNo: logisticsData.MerchantTradeNo || merchantTradeNo, MerchantTradeDate: getMerchantTradeDate(), TotalAmount: totalAmount, TradeDesc: 'MessyTT&L2i訂單', Items: cart.map((item) => ({ name: item.name, qty: item.qty })), ReturnURL: `${ECPAY_CONFIG.netlifyUrl}/.netlify/functions/ecpay-payment`, OrderResultURL: `${returnBase}?payment=success&order=${merchantTradeNo}`, AllPayLogisticsID: logisticsData.AllPayLogisticsID || '', CVSStoreID: checkoutFormData.storeId })
-        });
-        const paymentData = await paymentResponse.json();
-        if (!paymentResponse.ok || !paymentData.success) throw new Error('PaymentCreateFailed');
-        const couponValue = checkoutFormData.useCoupon ? Math.max(0, getCartSubtotal() + shippingFee - totalAmount) : 0;
-        localStorage.setItem('messy_pending_order', JSON.stringify({ orderNo: merchantTradeNo, couponValue, shippingFee, recipient: { name: checkoutFormData.name, phone: checkoutFormData.phone }, pickupStore: checkoutFormData.storeInfo, logisticsId: logisticsData.AllPayLogisticsID || '', createdAt: Date.now() }));
-        const form = document.createElement('form');
-        form.method = 'post';
-        form.action = paymentData.paymentUrl;
-        Object.keys(paymentData.formData || {}).forEach((key) => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = paymentData.formData[key];
-            form.appendChild(input);
-        });
-        document.body.appendChild(form);
-        form.submit();
+        // 付款 API（Vercel）回傳的是 HTML（內含自動送出表單），不是 JSON
+const paymentResponse = await fetch(`${getFunctionBaseUrl()}/api/ecpay-payment`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    MerchantTradeNo: logisticsData.MerchantTradeNo || merchantTradeNo,
+    TotalAmount: totalAmount,
+    TradeDesc: 'MessyTT&L2i訂單',
+    ItemName: buildItemNameForEcpay()
+  })
+});
+
+const paymentHtml = await paymentResponse.text();
+if (!paymentResponse.ok) throw new Error('PaymentCreateFailed');
+if (!paymentHtml || paymentHtml.length < 200) throw new Error('PaymentHtmlInvalid');
+
+// 用新視窗承接（避免導向把你的結帳頁洗掉）
+const payWin = window.open('about:blank', `ecpayPay_${Date.now()}`);
+if (!payWin) throw new Error('PopupBlocked');
+
+payWin.document.open();
+payWin.document.write(paymentHtml);
+payWin.document.close();
     } catch (e) {
         const err = document.getElementById('checkoutStep3Error');
         err.innerText = e && e.message === 'AmountTooLow' ? '最終金額不得低於 NT$ 1，請調整購物金後重試。' : '支付過程失敗，請稍後重試。';
