@@ -967,7 +967,7 @@ async function submitEcpayPayment() {
         if (currentOrigin && currentOrigin.startsWith('http')) allowedOrigins.push(currentOrigin);
         const baseOrigin = allowedOrigins.includes(currentOrigin) ? currentOrigin : ECPAY_CONFIG.siteUrl;
         const returnBase = `${baseOrigin}${location.pathname}`;
-        const logisticsResponse = await fetch(`${getFunctionBaseUrl()}/.netlify/functions/ecpay-create-logistics-order`, {
+        const logisticsResponse = await fetch(`${getFunctionBaseUrl()}/api/ecpay-create-logistics-order`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ MerchantTradeNo: merchantTradeNo, TotalAmount: totalAmount, TradeDesc: '商品訂單', ItemName: buildItemNameForEcpay(), ReceiverName: checkoutFormData.name, ReceiverPhone: checkoutFormData.phone, CVSStoreID: checkoutFormData.storeId })
