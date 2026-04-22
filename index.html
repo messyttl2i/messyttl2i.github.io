@@ -442,7 +442,7 @@ let _fpVerifiedEmail = null;
 let _currentDetailProduct = null;
 let autoplay = null;
 
-const ECPAY_CONFIG = { merchantId: '3483323', netlifyUrl: 'https://messyttl2i.netlify.app', siteUrl: 'https://messyttl2i.github.io' };
+const ECPAY_CONFIG = { merchantId: '3483323', functionsBaseUrl: 'https://messyttl2i-github-io.vercel.app',siteUrl: 'https://messyttl2i.github.io'};
 const EMAP_TIMEOUT_MS = 5 * 60 * 1000;
 let checkoutStep = 1;
 const checkoutFormData = { name: '', phone: '', shipping: 'seven-eleven-pickup', storeId: '', storeInfo: null, useCoupon: false, couponAmount: 0 };
@@ -462,17 +462,28 @@ window.onload = () => {
 };
 
 window.addEventListener('message', (event) => {
-    if (!event || !event.data || event.data.type !== 'CVS_SELECTION') return;
-    const selected = event.data;
-    document.getElementById('cvsStoreID').value = selected.StoreID || '';
-    document.getElementById('cvsStoreName').value = selected.StoreName || '';
-    document.getElementById('cvsStoreAddress').value = selected.StoreAddress || '';
-    document.getElementById('cvsStorePhone').value = selected.StorePhone || '';
-    checkoutFormData.storeId = selected.StoreID || '';
-    checkoutFormData.storeInfo = selected.StoreID ? { id: selected.StoreID || '', name: selected.StoreName || '', address: selected.StoreAddress || '', phone: selected.StorePhone || '' } : null;
-    updateSelectedStoreDisplay(selected);
-    updateCheckoutSummary();
-    closeEMapModal();
+  if (!event.data || event.data.type !== 'CVS_SELECTION') return;
+
+  const selected = event.data;
+
+  const storeId = selected.StoreID || selected.CVSStoreID || '';
+  const storeName = selected.StoreName || selected.CVSStoreName || '';
+  const storeAddress = selected.StoreAddress || selected.CVSAddress || '';
+  const storePhone = selected.StorePhone || selected.CVSTelephone || '';
+
+  document.getElementById('cvsStoreID').value = storeId;
+  document.getElementById('cvsStoreName').value = storeName;
+  document.getElementById('cvsStoreAddress').value = storeAddress;
+  document.getElementById('cvsStorePhone').value = storePhone;
+
+  checkoutFormData.storeId = storeId;
+  checkoutFormData.storeInfo = storeId
+    ? { id: storeId, name: storeName, address: storeAddress, phone: storePhone }
+    : null;
+
+  updateSelectedStoreDisplay({ StoreID: storeId, StoreName: storeName, StoreAddress: storeAddress, StorePhone: storePhone });
+  updateCheckoutSummary();
+  closeEMapModal();
 });
 
 function generateSalt() {
