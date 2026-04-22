@@ -84,10 +84,25 @@ module.exports = async (req, res) => {
 
   const SITE_URL = getSiteUrl(req);
 
-  if (!MERCHANT_ID || !HASH_KEY || !HASH_IV || !SITE_URL) {
-    res.status(500).json({ success: false, error: 'MissingEcpayLogisticsConfig' });
-    return;
-  }
+ const siteUrl = getSiteUrl(req);
+
+if (!MERCHANT_ID || !HASH_KEY || !HASH_IV || !siteUrl) {
+  return res.status(500).json({
+    success: false,
+    error: 'MissingEcpayLogisticsConfig',
+    debug: {
+      siteUrl,
+      has_SITE_URL: !!process.env.SITE_URL,
+      has_ECPAY_MERCHANT_ID: !!process.env.ECPAY_MERCHANT_ID,
+      has_ECPAY_HASH_KEY: !!process.env.ECPAY_HASH_KEY,
+      has_ECPAY_HASH_IV: !!process.env.ECPAY_HASH_IV,
+      has_ECPAY_LOGISTICS_HASH_KEY: !!process.env.ECPAY_LOGISTICS_HASH_KEY,
+      has_ECPAY_LOGISTICS_HASH_IV: !!process.env.ECPAY_LOGISTICS_HASH_IV,
+      VERCEL_ENV: process.env.VERCEL_ENV || '',
+      VERCEL_URL: process.env.VERCEL_URL || '',
+    }
+  });
+}
 
   // 綠界選店完成後會 redirect 回 ServerReplyURL（GET）
   if (req.method === 'GET') {
