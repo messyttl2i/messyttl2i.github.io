@@ -1,23 +1,28 @@
 const crypto = require('crypto');
 
-const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID;
-const HASH_KEY = process.env.ECPAY_LOGISTICS_HASH_KEY || process.env.ECPAY_HASH_KEY;
-const HASH_IV = process.env.ECPAY_LOGISTICS_HASH_IV || process.env.ECPAY_HASH_IV;
+const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID || process.env.ECPAY_MERCHANTID || process.env.MERCHANT_ID;
+const HASH_KEY = process.env.ECPAY_LOGISTICS_HASH_KEY || process.env.ECPAY_HASH_KEY || process.env.ECPAY_HASHKEY;
+const HASH_IV = process.env.ECPAY_LOGISTICS_HASH_IV || process.env.ECPAY_HASH_IV || process.env.ECPAY_HASHIV;
+const ECPAY_MAP_URL = process.env.ECPAY_LOGISTICS_MAP_URL || 'https://logistics.ecpay.com.tw/Express/map';
 
-// 你的Vercel 專案 base URL（建議你在 Vercel 設 SITE_URL= https://xxx.vercel.app）
-function getSiteUrl(req) {
-  const envSite = (process.env.SITE_URL || '').replace(/\/$/, '');
-  if (envSite) return envSite;
-
-  // fallback：從 request 推
-  const proto = (req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-  const host = (req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
-  if (host) return `${proto}://${host}`;
-
+function getSiteUrl() {
+  // 1. Manual override (highest priority)
+  const manual = (process.env.SITE_URL || process.env.NETLIFY_SITE_URL || '').trim();
+  if (manual) return manual.replace(/\/$/, '');
+  // 2. Vercel stable production URL (set automatically since 2023)
+  const prod = (process.env.VERCEL_PROJECT_PRODUCTION_URL || '').trim();
+  if (prod) return `https://${prod}`.replace(/\/$/, '');
+  // 3. Vercel deployment URL (always set by Vercel runtime)
+  const vercelUrl = (process.env.VERCEL_URL || '').trim();
+  if (vercelUrl) return `https://${vercelUrl}`.replace(/\/$/, '');
   return '';
 }
 
-const ECPAY_MAP_URL = process.env.ECPAY_LOGISTICS_MAP_URL || 'https://logistics.ecpay.com.tw/Express/map';
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
+}
 
 function ecpayEncode(value) {
   return encodeURIComponent(value)
@@ -33,7 +38,6 @@ function buildCheckMacValue(params, hashKey, hashIv) {
     .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
     .map((key) => `${key}=${params[key] ?? ''}`)
     .join('&');
-
   const raw = `HashKey=${hashKey}&${sorted}&HashIV=${hashIv}`;
   const encoded = ecpayEncode(raw).toLowerCase();
   return crypto.createHash('sha256').update(encoded).digest('hex').toUpperCase();
@@ -54,74 +58,46 @@ function parseStoreFromQuery(query) {
   };
 }
 
-function setCors(req, res) {
-  // 建議你先只允許你的 GitHub Pages 網域；需要測試再加 localhost
-  const allowList = new Set([
-    'https://messyttl2i.github.io',
-    'http://localhost:8888',
-    'http://localhost:3000'
-  ]);
-
-  const origin = req.headers.origin;
-  if (origin && allowList.has(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    // 沒帶 origin（例如直接 GET 開頁）就不特別限制
-    res.setHeader('Access-Control-Allow-Origin', '*');
+function parseBody(body) {
+  if (!body) return {};
+  if (typeof body === 'object') return body;
+  try {
+    return JSON.parse(body);
+  } catch (e) {
+    return {};
   }
-
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
 }
 
 module.exports = async (req, res) => {
-  setCors(req, res);
+  setCors(res);
 
   if (req.method === 'OPTIONS') {
-    res.status(204).send('');
+    res.status(204).end();
     return;
   }
 
-  const SITE_URL = getSiteUrl(req);
+  const siteUrl = getSiteUrl();
+  const missing = [];
+  if (!MERCHANT_ID) missing.push('ECPAY_MERCHANT_ID');
+  if (!HASH_KEY) missing.push('ECPAY_LOGISTICS_HASH_KEY / ECPAY_HASH_KEY');
+  if (!HASH_IV) missing.push('ECPAY_LOGISTICS_HASH_IV / ECPAY_HASH_IV');
+  if (!siteUrl) missing.push('SITE_URL (or VERCEL_PROJECT_PRODUCTION_URL)');
+  if (missing.length) {
+    res.status(500).json({ success: false, error: 'MissingEcpayLogisticsConfig', missing });
+    return;
+  }
 
- const siteUrl = getSiteUrl(req);
-
-if (!MERCHANT_ID || !HASH_KEY || !HASH_IV || !siteUrl) {
-  return res.status(500).json({
-    success: false,
-    error: 'MissingEcpayLogisticsConfig',
-    debug: {
-      siteUrl,
-      has_SITE_URL: !!process.env.SITE_URL,
-      has_ECPAY_MERCHANT_ID: !!process.env.ECPAY_MERCHANT_ID,
-      has_ECPAY_HASH_KEY: !!process.env.ECPAY_HASH_KEY,
-      has_ECPAY_HASH_IV: !!process.env.ECPAY_HASH_IV,
-      has_ECPAY_LOGISTICS_HASH_KEY: !!process.env.ECPAY_LOGISTICS_HASH_KEY,
-      has_ECPAY_LOGISTICS_HASH_IV: !!process.env.ECPAY_LOGISTICS_HASH_IV,
-      VERCEL_ENV: process.env.VERCEL_ENV || '',
-      VERCEL_URL: process.env.VERCEL_URL || '',
-    }
-  });
-}
-
-  // 綠界選店完成後會 redirect 回 ServerReplyURL（GET）
   if (req.method === 'GET') {
     const store = parseStoreFromQuery(req.query || {});
-    const payload = { type: 'CVS_SELECTION', ...store };
-
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Store Selected</title></head>
-<body><script>
-(function () {
-  var payload = ${JSON.stringify(payload)};
-  try {
-    if (window.opener && window.opener !== window) { window.opener.postMessage(payload, '*'); }
-    if (window.parent && window.parent !== window) { window.parent.postMessage(payload, '*'); }
-  } catch (e) {}
-  setTimeout(function () { window.close(); }, 300);
-  document.body.innerHTML = '<p>門市已選擇完成，視窗即將關閉...</p>';
-})();
-</script></body></html>`;
-
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Store Selected</title></head><body><script>
+      (function () {
+        var payload = ${JSON.stringify({ type: 'CVS_SELECTION', ...store })};
+        if (window.opener && window.opener !== window) { window.opener.postMessage(payload, '*'); }
+        if (window.parent && window.parent !== window) { window.parent.postMessage(payload, '*'); }
+        setTimeout(function () { window.close(); }, 300);
+        document.body.innerHTML = '<p>門市已選擇完成，視窗即將關閉...</p>';
+      })();
+    </script></body></html>`;
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.status(200).send(html);
     return;
@@ -133,20 +109,18 @@ if (!MERCHANT_ID || !HASH_KEY || !HASH_IV || !siteUrl) {
   }
 
   try {
-    const body = req.body || {};
+    const body = parseBody(req.body);
     const merchantTradeNo = normalizeTradeNo(body.MerchantTradeNo);
     const device = body.Device === 1 ? '1' : '0';
-
     const params = {
       MerchantID: MERCHANT_ID,
       MerchantTradeNo: merchantTradeNo,
       LogisticsType: 'CVS',
       LogisticsSubType: 'UNIMARTC2C',
       IsCollection: 'N',
-      ServerReplyURL: `${SITE_URL}/api/ecpay-logistics-map`,
+      ServerReplyURL: `${siteUrl}/api/ecpay-logistics-map`,
       Device: device
     };
-
     params.CheckMacValue = buildCheckMacValue(params, HASH_KEY, HASH_IV);
 
     res.status(200).json({
@@ -155,7 +129,7 @@ if (!MERCHANT_ID || !HASH_KEY || !HASH_IV || !siteUrl) {
       formData: params,
       MerchantTradeNo: merchantTradeNo
     });
-  } catch (e) {
-    res.status(500).json({ success: false, error: 'MapBuildFailed', message: e.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'MapBuildFailed', message: error.message });
   }
 };
