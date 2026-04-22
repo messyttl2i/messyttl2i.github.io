@@ -674,17 +674,14 @@ function handleLogout() { sessionStorage.removeItem('messy_session'); currentUse
  function getCartSubtotal() { return cart.reduce((sum, item) => sum + (item.price * item.qty), 0); }
  function getShippingFee() { return 0; }
 function getFunctionBaseUrl() {
-    const origin = (location.origin || '').toLowerCase();
-    // Opened as local file, about:blank, or unknown origin: force Netlify endpoint.
-    if (!origin || origin === 'null' || location.protocol === 'file:') return ECPAY_CONFIG.netlifyUrl;
-    // GitHub Pages cannot execute Netlify Functions; call Netlify directly.
-    if (origin.includes('github.io')) return ECPAY_CONFIG.netlifyUrl;
-    return location.origin;
+  // 你已經搬到 Vercel：不管在 GitHub Pages / localhost / 任何地方，都固定打 Vercel
+  return ECPAY_CONFIG.functionsBaseUrl;
 }
 
 function buildFunctionUrl(baseUrl, functionName) {
-    const safeBase = String(baseUrl || '').replace(/\/$/, '');
-    return `${safeBase}/.netlify/functions/${functionName}`;
+  const safeBase = String(baseUrl || '').replace(/\/$/, '');
+  // Vercel API routes: /api/<name>
+  return `${safeBase}/api/${functionName}`;
 }
  function isMobile() { return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
  function getMerchantTradeDate() { const now = new Date(); const pad = (n) => String(n).padStart(2, '0'); return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`; }
