@@ -425,6 +425,7 @@
 <div id="toast">操作成功</div>
 
 <script>
+ 
 try { emailjs.init('m1fvagOxoo5vaDvX1'); } catch (e) {}
 
 const PRODUCTS = {
@@ -561,6 +562,31 @@ function handleForgotPasswordStep1() {
     document.getElementById('forgotPasswordStep2').style.display = 'block';
 }
 
+    function openEMapInPopup(actionUrl, formData) {
+  const popup = window.open('', 'ecpayMap', 'width=980,height=720,noopener,noreferrer');
+  if (!popup) throw new Error('PopupBlocked');
+
+  const doc = popup.document;
+  doc.open();
+  doc.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
+  doc.close();
+
+  const form = doc.createElement('form');
+  form.method = 'POST';
+  form.action = actionUrl;
+
+  Object.entries(formData || {}).forEach(([k, v]) => {
+    const input = doc.createElement('input');
+    input.type = 'hidden';
+    input.name = k;
+    input.value = String(v ?? '');
+    form.appendChild(input);
+  });
+
+  doc.body.appendChild(form);
+ form.submit();
+}
+ 
 async function handleForgotPasswordStep2() {
     const newPw = document.getElementById('fp_new_pw').value;
     const confirmPw = document.getElementById('fp_confirm_pw').value;
@@ -1209,29 +1235,5 @@ function buyNow() { if (!_currentDetailProduct) return; const size = document.ge
  
 </script>
  
-   function openEMapInPopup(actionUrl, formData) {
-  const popup = window.open('', 'ecpayMap', 'width=980,height=720,noopener,noreferrer');
-  if (!popup) throw new Error('PopupBlocked');
-
-  const doc = popup.document;
-  doc.open();
-  doc.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
-  doc.close();
-
-  const form = doc.createElement('form');
-  form.method = 'POST';
-  form.action = actionUrl;
-
-  Object.entries(formData || {}).forEach(([k, v]) => {
-    const input = doc.createElement('input');
-    input.type = 'hidden';
-    input.name = k;
-    input.value = String(v ?? '');
-    form.appendChild(input);
-  });
-
-  doc.body.appendChild(form);
-  form.submit();
-}
 </body>
 </html>
