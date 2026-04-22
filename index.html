@@ -564,7 +564,7 @@ function handleForgotPasswordStep1() {
 
     function openEMapInPopup(actionUrl, formData) {
   const popup = window.open('', 'ecpayMap', 'width=980,height=720,noopener,noreferrer');
-  if (!popup) throw new Error('PopupBlocked');
+ if (!popup) { alert('瀏覽器阻擋彈出視窗，請允許此網站的彈出視窗後再試一次。');  throw new Error('PopupBlocked');}
 
   const doc = popup.document;
   doc.open();
