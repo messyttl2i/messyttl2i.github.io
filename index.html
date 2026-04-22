@@ -935,11 +935,12 @@ async function parseJsonResponse(response) {
 }
 
 async function openEMapSelector() {
+  console.log('[ECPAY] openEMapSelector clicked', new Date().toISOString());
   const trigger = document.getElementById('openEMapBtn');
   if (trigger) trigger.disabled = true;
 
   // ✅ 先同步開 popup（避免 await 後被擋）
-  const popup = window.open('', 'ecpayMap', 'width=980,height=720,noopener,noreferrer');
+  const popup = window.open('', 'ecpayMap', ''width=980,height=720,noopener,noreferrer');
   if (!popup) {
     alert('瀏覽器阻擋彈出視窗，請允許此網站的彈出視窗後再試一次。');
     if (trigger) trigger.disabled = false;
