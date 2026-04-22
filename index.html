@@ -938,6 +938,23 @@ async function openEMapSelector() {
   const trigger = document.getElementById('openEMapBtn');
   if (trigger) trigger.disabled = true;
 
+  // ✅ 先同步開 popup（避免 await 後被擋）
+  const popup = window.open('', 'ecpayMap', 'width=980,height=720,noopener,noreferrer');
+  if (!popup) {
+    alert('瀏覽器阻擋彈出視窗，請允許此網站的彈出視窗後再試一次。');
+    if (trigger) trigger.disabled = false;
+    return;
+  }
+
+  // 顯示載入中（可選）
+  try {
+    popup.document.open();
+    popup.document.write('<!doctype html><meta charset="utf-8"><title>Loading...</title>Loading...');
+    popup.document.close();
+  } catch {
+    // ignore
+  }
+
   try {
     const payload = {
       MerchantTradeNo: generateTradeNo(),
@@ -945,7 +962,6 @@ async function openEMapSelector() {
     };
 
     const candidateBases = [getFunctionBaseUrl()].filter(Boolean);
-
     let lastError = null;
     let mapData = null;
 
@@ -973,9 +989,10 @@ async function openEMapSelector() {
 
     if (!mapData) throw lastError || new Error('MapInitFailed');
 
-    // ✅ 開啟綠界電子地圖（POST form）
-    openEMapInPopup(mapData.eMapUrl, mapData.formData);
+    // ✅ 把表單 POST 到綠界地圖頁（在已開好的 popup 裡）
+    submitFormInPopup(popup, mapData.eMapUrl, mapData.formData);
   } catch (err) {
+    try { popup.close(); } catch {}
     console.error('openEMapSelector failed:', err);
     alert(err && err.message ? err.message : String(err));
   } finally {
