@@ -862,7 +862,7 @@ function clearCheckoutError() { const err = document.getElementById('checkoutSte
 
 function openEMapModal(data) {
     const popupName = `emapPopup_${Date.now()}`;
-    const popup = window.open('', popupName, 'width=980,height=760,noopener,noreferrer');
+   const popup = window.open('about:blank', popupName, 'width=980,height=760');
     if (!popup) {
         showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
         return;
