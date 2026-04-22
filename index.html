@@ -909,7 +909,7 @@ async function openEMapSelector() {
             MerchantTradeNo: generateTradeNo(),
             Device: isMobile() ? 1 : 0
         };
-        const candidateBases = Array.from(new Set([getFunctionBaseUrl(), ECPAY_CONFIG.netlifyUrl].filter(Boolean)));
+       const candidateBases = [getFunctionBaseUrl()].filter(Boolean);
         let lastError = null;
         let mapData = null;
 
