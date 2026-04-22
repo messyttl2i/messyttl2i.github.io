@@ -909,77 +909,52 @@ async function parseJsonResponse(response) {
 }
 
 async function openEMapSelector() {
-    const trigger = document.getElementById('openEMapBtn');
-    if (trigger) trigger.disabled = true;
+  const trigger = document.getElementById('openEMapBtn');
+  if (trigger) trigger.disabled = true;
 
-    try {
-        const payload = {
-            MerchantTradeNo: generateTradeNo(),
-            Device: isMobile() ? 1 : 0
-        };
-       const candidateBases = [getFunctionBaseUrl()].filter(Boolean);
-        let lastError = null;
-        let mapData = null;
-
-        for (const base of candidateBases) {
   try {
-    const response = await fetch(buildFunctionUrl(base, 'ecpay-logistics-map'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const { data, raw } = await parseJsonResponse(response);
+    const payload = {
+      MerchantTradeNo: generateTradeNo(),
+      Device: isMobile() ? 1 : 0
+    };
 
-    if (!response.ok || !data.success) {
-      const detail = data && (data.message || data.error) ? (data.message || data.error) : raw;
-      throw new Error(detail || `MapInitFailed (${response.status})`);
+    const candidateBases = [getFunctionBaseUrl()].filter(Boolean);
+
+    let lastError = null;
+    let mapData = null;
+
+    for (const base of candidateBases) {
+      try {
+        const response = await fetch(buildFunctionUrl(base, 'ecpay-logistics-map'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const { data, raw } = await parseJsonResponse(response);
+
+        if (!response.ok || !data || !data.success) {
+          const detail = data && (data.message || data.error) ? (data.message || data.error) : raw;
+          throw new Error(detail || `MapInitFailed (${response.status})`);
+        }
+
+        mapData = data;
+        break;
+      } catch (err) {
+        lastError = err;
+      }
     }
 
-    mapData = data;
-    break;
+    if (!mapData) throw lastError || new Error('MapInitFailed');
+
+    // ✅ 開啟綠界電子地圖（POST form）
+    openEMapInPopup(mapData.eMapUrl, mapData.formData);
   } catch (err) {
-    lastError = err;
+    console.error('openEMapSelector failed:', err);
+    alert(err && err.message ? err.message : String(err));
+  } finally {
+    if (trigger) trigger.disabled = false;
   }
-}
-
-// ✅ 迴圈結束後：如果成功拿到 mapData，就開綠界地圖
-if (!mapData) throw lastError || new Error('MapInitFailed');
-
-openEMapInPopup(mapData.eMapUrl, mapData.formData);
-
-     function openEMapInPopup(actionUrl, formData) {
-  const popup = window.open('', 'ecpayMap', 'width=980,height=720,noopener,noreferrer');
-  if (!popup) throw new Error('PopupBlocked');
-
-  const doc = popup.document;
-  doc.open();
-  doc.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
-  doc.close();
-
-  const form = doc.createElement('form');
-  form.method = 'POST';
-  form.action = actionUrl;
-
-  Object.entries(formData || {}).forEach(([k, v]) => {
-    const input = doc.createElement('input');
-    input.type = 'hidden';
-    input.name = k;
-    input.value = String(v ?? '');
-    form.appendChild(input);
-  });
-
-  doc.body.appendChild(form);
-  form.submit();
-}
-     
-        if (!mapData) throw (lastError || new Error('MapInitFailed'));
-        openEMapModal(mapData);
-    } catch (error) {
-        console.error('openEMapSelector failed:', error);
-        showToast(`無法打開門市選擇：${(error && error.message) ? error.message : '請稍後重試'}`);
-    } finally {
-        if (trigger) trigger.disabled = false;
-    }
 }
 
 window.stopAutoplay = function () {
@@ -1231,7 +1206,32 @@ function showProductDetail(id) {
 function closeProductDetail() { document.getElementById('productDetailOverlay').style.display = 'none'; document.body.style.overflow = ''; _currentDetailProduct = null; }
 function addToCartFromDetail() { if (!_currentDetailProduct) return; const size = document.getElementById('detailSizeSelect').value; const { id, name, price, images } = _currentDetailProduct; addToCart(id, name, price, images[0], size); showToast(`已加入購物車：${name} (${size})`); }
 function buyNow() { if (!_currentDetailProduct) return; const size = document.getElementById('detailSizeSelect').value; const { id, name, price, images } = _currentDetailProduct; addToCart(id, name, price, images[0], size); closeProductDetail(); togglePanel('cart-drawer'); }
+ 
 </script>
+ 
+   function openEMapInPopup(actionUrl, formData) {
+  const popup = window.open('', 'ecpayMap', 'width=980,height=720,noopener,noreferrer');
+  if (!popup) throw new Error('PopupBlocked');
 
+  const doc = popup.document;
+  doc.open();
+  doc.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
+  doc.close();
+
+  const form = doc.createElement('form');
+  form.method = 'POST';
+  form.action = actionUrl;
+
+  Object.entries(formData || {}).forEach(([k, v]) => {
+    const input = doc.createElement('input');
+    input.type = 'hidden';
+    input.name = k;
+    input.value = String(v ?? '');
+    form.appendChild(input);
+  });
+
+  doc.body.appendChild(form);
+  form.submit();
+}
 </body>
 </html>
