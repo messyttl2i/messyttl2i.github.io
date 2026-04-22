@@ -135,14 +135,15 @@ module.exports = async (req, res) => {
     const parsed = parseEcpayResponse(rawText);
     const isSuccess = String(parsed.RtnCode || '').trim() === '1' || /^1\|/.test(rawText);
 
-    return res.status(isSuccess ? 200 : 400).json({
-      success: isSuccess,
-      MerchantTradeNo: merchantTradeNo,
-      AllPayLogisticsID: parsed.AllPayLogisticsID || '',
-      raw: rawText,
-      ...parsed
-    });
-  } catch (e) {
-    return res.status(500).json({ success: false, error: 'CreateLogisticsFailed', message: e.message });
+  return res.status(500).json({
+  success: false,
+  error: 'MissingEcpayLogisticsConfig',
+  debug: {
+    SITE_URL: process.env.SITE_URL || '',
+    ECPAY_MERCHANT_ID: process.env.ECPAY_MERCHANT_ID || '',
+    has_ECPAY_HASH_KEY: !!(process.env.ECPAY_LOGISTICS_HASH_KEY || process.env.ECPAY_HASH_KEY),
+    has_ECPAY_HASH_IV: !!(process.env.ECPAY_LOGISTICS_HASH_IV || process.env.ECPAY_HASH_IV),
+    VERCEL_ENV: process.env.VERCEL_ENV || '',
+    VERCEL_URL: process.env.VERCEL_URL || '',
   }
-};
+});
