@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MessyTT&L2i | Official Store</title>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link rel="icon" href="images/S__80977927-.png">
  <style>
      :root {
          --bg-sleet: #D6DADC; /* Pantone 14-4005 */
@@ -348,7 +348,7 @@
 <div class="main-container" id="mainContainer">
     <div class="product-grid">
         <div class="product-card" data-category="CLOTHING" data-product-id="1">
-            <div class="image-box" onclick="showProductDetail('1')">
+            <div class="image-box" onmouseenter="startAutoplay(this)" onmouseleave="stopAutoplay(this)" onclick="showProductDetail('1')">
                 <img src="images/S__81002508_0.jpg" alt="Cyber Butterfly Necklace image 1"><img src="images/S__81002509_0.jpg" alt="Cyber Butterfly Necklace image 2">
             </div>
             <div class="product-info">
@@ -425,8 +425,33 @@
 <div id="toast">操作成功</div>
 
 <script>
- 
-try { emailjs.init('m1fvagOxoo5vaDvX1'); } catch (e) {}
+const EMAILJS_CONFIG = {
+    publicKey: 'm1fvagOxoo5vaDvX1',
+    serviceId: 'service_pzf7lvt',
+    templateId: 'template_lsph3zp'
+};
+
+async function sendWelcomeEmail(name, email) {
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            service_id: EMAILJS_CONFIG.serviceId,
+            template_id: EMAILJS_CONFIG.templateId,
+            user_id: EMAILJS_CONFIG.publicKey,
+            template_params: {
+                user_name: name,
+                user_email: email,
+                coupon_amount: 50,
+                site_url: 'https://messyttl2i.github.io/'
+            }
+        })
+    });
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || `EmailJS HTTP ${response.status}`);
+    }
+}
 
 const PRODUCTS = {
     '1': {
@@ -443,7 +468,13 @@ let _fpVerifiedEmail = null;
 let _currentDetailProduct = null;
 let autoplay = null;
 
-const ECPAY_CONFIG = { merchantId: '3483323', functionsBaseUrl: 'https://messyttl2i-github-io.vercel.app',siteUrl: 'https://messyttl2i.github.io'};
+const ECPAY_CONFIG = {
+    merchantId: '3483323',
+    // Fill this after Vercel deploy, e.g. https://messyttl2i.vercel.app
+    apiBaseUrl: '',
+    netlifyUrl: 'https://messyttl2i.netlify.app',
+    siteUrl: 'https://messyttl2i.github.io'
+};
 const EMAP_TIMEOUT_MS = 5 * 60 * 1000;
 let checkoutStep = 1;
 const checkoutFormData = { name: '', phone: '', shipping: 'seven-eleven-pickup', storeId: '', storeInfo: null, useCoupon: false, couponAmount: 0 };
@@ -463,28 +494,17 @@ window.onload = () => {
 };
 
 window.addEventListener('message', (event) => {
-  if (!event.data || event.data.type !== 'CVS_SELECTION') return;
-
-  const selected = event.data;
-
-  const storeId = selected.StoreID || selected.CVSStoreID || '';
-  const storeName = selected.StoreName || selected.CVSStoreName || '';
-  const storeAddress = selected.StoreAddress || selected.CVSAddress || '';
-  const storePhone = selected.StorePhone || selected.CVSTelephone || '';
-
-  document.getElementById('cvsStoreID').value = storeId;
-  document.getElementById('cvsStoreName').value = storeName;
-  document.getElementById('cvsStoreAddress').value = storeAddress;
-  document.getElementById('cvsStorePhone').value = storePhone;
-
-  checkoutFormData.storeId = storeId;
-  checkoutFormData.storeInfo = storeId
-    ? { id: storeId, name: storeName, address: storeAddress, phone: storePhone }
-    : null;
-
-  updateSelectedStoreDisplay({ StoreID: storeId, StoreName: storeName, StoreAddress: storeAddress, StorePhone: storePhone });
-  updateCheckoutSummary();
-  closeEMapModal();
+    if (!event || !event.data || event.data.type !== 'CVS_SELECTION') return;
+    const selected = event.data;
+    document.getElementById('cvsStoreID').value = selected.StoreID || '';
+    document.getElementById('cvsStoreName').value = selected.StoreName || '';
+    document.getElementById('cvsStoreAddress').value = selected.StoreAddress || '';
+    document.getElementById('cvsStorePhone').value = selected.StorePhone || '';
+    checkoutFormData.storeId = selected.StoreID || '';
+    checkoutFormData.storeInfo = selected.StoreID ? { id: selected.StoreID || '', name: selected.StoreName || '', address: selected.StoreAddress || '', phone: selected.StorePhone || '' } : null;
+    updateSelectedStoreDisplay(selected);
+    updateCheckoutSummary();
+    closeEMapModal();
 });
 
 function generateSalt() {
@@ -562,31 +582,6 @@ function handleForgotPasswordStep1() {
     document.getElementById('forgotPasswordStep2').style.display = 'block';
 }
 
-    function openEMapInPopup(actionUrl, formData) {
-  const popup = window.open('', 'ecpayMap', 'width=980,height=720,noopener,noreferrer');
- if (!popup) { alert('瀏覽器阻擋彈出視窗，請允許此網站的彈出視窗後再試一次。');  throw new Error('PopupBlocked');}
-
-  const doc = popup.document;
-  doc.open();
-  doc.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
-  doc.close();
-
-  const form = doc.createElement('form');
-  form.method = 'POST';
-  form.action = actionUrl;
-
-  Object.entries(formData || {}).forEach(([k, v]) => {
-    const input = doc.createElement('input');
-    input.type = 'hidden';
-    input.name = k;
-    input.value = String(v ?? '');
-    form.appendChild(input);
-  });
-
-  doc.body.appendChild(form);
- form.submit();
-}
- 
 async function handleForgotPasswordStep2() {
     const newPw = document.getElementById('fp_new_pw').value;
     const confirmPw = document.getElementById('fp_confirm_pw').value;
@@ -680,7 +675,7 @@ async function handleRegister() {
         document.getElementById('reg_birth_month').value = '';
         document.getElementById('reg_birth_day').value = '';
         try {
-            await emailjs.send('service_pzf7lvt', 'template_lsph3zp', { user_name: name, user_email: email, coupon_amount: 50, site_url: 'https://messyttl2i.github.io/' });
+            await sendWelcomeEmail(name, email);
             showToast('註冊成功！歡迎信已發送');
         } catch (mailErr) {
             showToast('註冊成功，但歡迎信發送失敗（請聯絡客服）');
@@ -700,14 +695,54 @@ function handleLogout() { sessionStorage.removeItem('messy_session'); currentUse
  function getCartSubtotal() { return cart.reduce((sum, item) => sum + (item.price * item.qty), 0); }
  function getShippingFee() { return 0; }
 function getFunctionBaseUrl() {
-  // 你已經搬到 Vercel：不管在 GitHub Pages / localhost / 任何地方，都固定打 Vercel
-  return ECPAY_CONFIG.functionsBaseUrl;
+    const origin = (location.origin || '').toLowerCase();
+    const preferredExternal = (ECPAY_CONFIG.apiBaseUrl || ECPAY_CONFIG.netlifyUrl || '').trim();
+    // Opened as local file, about:blank, or unknown origin: use external endpoint.
+    if (!origin || origin === 'null' || location.protocol === 'file:') return preferredExternal;
+    // GitHub Pages cannot execute server functions; use external endpoint.
+    if (origin.includes('github.io')) return preferredExternal;
+    return location.origin;
 }
 
 function buildFunctionUrl(baseUrl, functionName) {
-  const safeBase = String(baseUrl || '').replace(/\/$/, '');
-  // Vercel API routes: /api/<name>
-  return `${safeBase}/api/${functionName}`;
+    const safeBase = String(baseUrl || '').replace(/\/$/, '');
+    if (!safeBase) return '';
+    if (safeBase.includes('netlify.app') || safeBase.includes('netlify.live')) {
+        return `${safeBase}/.netlify/functions/${functionName}`;
+    }
+    return `${safeBase}/api/${functionName}`;
+}
+
+function getFunctionBaseCandidates() {
+    const values = [
+        getFunctionBaseUrl(),
+        ECPAY_CONFIG.apiBaseUrl,
+        ECPAY_CONFIG.netlifyUrl
+    ].map((v) => String(v || '').trim()).filter(Boolean);
+    return Array.from(new Set(values));
+}
+
+async function postToFunctionWithFallback(functionName, payload) {
+    const candidates = getFunctionBaseCandidates();
+    let lastError = null;
+    for (const base of candidates) {
+        try {
+            const response = await fetch(buildFunctionUrl(base, functionName), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const { data, raw } = await parseJsonResponse(response);
+            if (!response.ok || !data.success) {
+                const detail = data && (data.message || data.error) ? (data.message || data.error) : raw;
+                throw new Error(detail || `${functionName}Failed (${response.status})`);
+            }
+            return { data, base };
+        } catch (err) {
+            lastError = err;
+        }
+    }
+    throw (lastError || new Error(`${functionName}Failed`));
 }
  function isMobile() { return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
  function getMerchantTradeDate() { const now = new Date(); const pad = (n) => String(n).padStart(2, '0'); return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`; }
@@ -896,7 +931,7 @@ function clearCheckoutError() { const err = document.getElementById('checkoutSte
 
 function openEMapModal(data) {
     const popupName = `emapPopup_${Date.now()}`;
-   const popup = window.open('about:blank', popupName, 'width=980,height=760');
+    const popup = window.open('', popupName, 'width=980,height=760,noopener,noreferrer');
     if (!popup) {
         showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
         return;
@@ -935,70 +970,22 @@ async function parseJsonResponse(response) {
 }
 
 async function openEMapSelector() {
-  console.log('[ECPAY] openEMapSelector clicked', new Date().toISOString());
-  const trigger = document.getElementById('openEMapBtn');
-  if (trigger) trigger.disabled = true;
+    const trigger = document.getElementById('openEMapBtn');
+    if (trigger) trigger.disabled = true;
 
-  // ✅ 先同步開 popup（避免 await 後被擋）
-  const popup = window.open('', 'ecpayMap', ''width=980,height=720,noopener,noreferrer');
-  if (!popup) {
-    alert('瀏覽器阻擋彈出視窗，請允許此網站的彈出視窗後再試一次。');
-    if (trigger) trigger.disabled = false;
-    return;
-  }
-
-  // 顯示載入中（可選）
-  try {
-    popup.document.open();
-    popup.document.write('<!doctype html><meta charset="utf-8"><title>Loading...</title>Loading...');
-    popup.document.close();
-  } catch {
-    // ignore
-  }
-
-  try {
-    const payload = {
-      MerchantTradeNo: generateTradeNo(),
-      Device: isMobile() ? 1 : 0
-    };
-
-    const candidateBases = [getFunctionBaseUrl()].filter(Boolean);
-    let lastError = null;
-    let mapData = null;
-
-    for (const base of candidateBases) {
-      try {
-        const response = await fetch(buildFunctionUrl(base, 'ecpay-logistics-map'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const { data, raw } = await parseJsonResponse(response);
-
-        if (!response.ok || !data || !data.success) {
-          const detail = data && (data.message || data.error) ? (data.message || data.error) : raw;
-          throw new Error(detail || `MapInitFailed (${response.status})`);
-        }
-
-        mapData = data;
-        break;
-      } catch (err) {
-        lastError = err;
-      }
+    try {
+        const payload = {
+            MerchantTradeNo: generateTradeNo(),
+            Device: isMobile() ? 1 : 0
+        };
+        const result = await postToFunctionWithFallback('ecpay-logistics-map', payload);
+        openEMapModal(result.data);
+    } catch (error) {
+        console.error('openEMapSelector failed:', error);
+        showToast(`無法打開門市選擇：${(error && error.message) ? error.message : '請稍後重試'}`);
+    } finally {
+        if (trigger) trigger.disabled = false;
     }
-
-    if (!mapData) throw lastError || new Error('MapInitFailed');
-
-    // ✅ 把表單 POST 到綠界地圖頁（在已開好的 popup 裡）
-    submitFormInPopup(popup, mapData.eMapUrl, mapData.formData);
-  } catch (err) {
-    try { popup.close(); } catch {}
-    console.error('openEMapSelector failed:', err);
-    alert(err && err.message ? err.message : String(err));
-  } finally {
-    if (trigger) trigger.disabled = false;
-  }
 }
 
 window.stopAutoplay = function () {
@@ -1008,30 +995,6 @@ window.stopAutoplay = function () {
     }
 };
 
- function submitFormInPopup(popup, actionUrl, formData) {
-  if (!popup) throw new Error('PopupBlocked');
-
-  const doc = popup.document;
-  doc.open();
-  doc.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
-  doc.close();
-
-  const form = doc.createElement('form');
-  form.method = 'POST';
-  form.action = actionUrl;
-
-  Object.entries(formData || {}).forEach(([k, v]) => {
-    const input = doc.createElement('input');
-    input.type = 'hidden';
-    input.name = k;
-    input.value = String(v ?? '');
-    form.appendChild(input);
-  });
-
-  doc.body.appendChild(form);
-  form.submit();
-}
- 
 async function submitEcpayPayment() {
     clearCheckoutError();
     if (!validateStep2()) { goToCheckoutStep(2); return; }
@@ -1050,36 +1013,25 @@ async function submitEcpayPayment() {
         if (currentOrigin && currentOrigin.startsWith('http')) allowedOrigins.push(currentOrigin);
         const baseOrigin = allowedOrigins.includes(currentOrigin) ? currentOrigin : ECPAY_CONFIG.siteUrl;
         const returnBase = `${baseOrigin}${location.pathname}`;
-        const logisticsResponse = await fetch(`${getFunctionBaseUrl()}/api/ecpay-create-logistics-order`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ MerchantTradeNo: merchantTradeNo, TotalAmount: totalAmount, TradeDesc: '商品訂單', ItemName: buildItemNameForEcpay(), ReceiverName: checkoutFormData.name, ReceiverPhone: checkoutFormData.phone, CVSStoreID: checkoutFormData.storeId })
+        const logisticsResult = await postToFunctionWithFallback('ecpay-create-logistics-order', { MerchantTradeNo: merchantTradeNo, MerchantTradeDate: getMerchantTradeDate(), TotalAmount: totalAmount, TradeDesc: '商品訂單', ItemName: buildItemNameForEcpay(), ReceiverName: checkoutFormData.name, ReceiverPhone: checkoutFormData.phone, CVSStoreID: checkoutFormData.storeId });
+        const logisticsData = logisticsResult.data;
+        const callbackBase = logisticsResult.base || getFunctionBaseUrl();
+        const paymentResult = await postToFunctionWithFallback('ecpay-payment', { MerchantTradeNo: logisticsData.MerchantTradeNo || merchantTradeNo, MerchantTradeDate: getMerchantTradeDate(), TotalAmount: totalAmount, TradeDesc: 'MessyTT&L2i訂單', Items: cart.map((item) => ({ name: item.name, qty: item.qty })), ReturnURL: buildFunctionUrl(callbackBase, 'ecpay-payment'), OrderResultURL: `${returnBase}?payment=success&order=${merchantTradeNo}`, AllPayLogisticsID: logisticsData.AllPayLogisticsID || '', CVSStoreID: checkoutFormData.storeId });
+        const paymentData = paymentResult.data;
+        const couponValue = checkoutFormData.useCoupon ? Math.max(0, getCartSubtotal() + shippingFee - totalAmount) : 0;
+        localStorage.setItem('messy_pending_order', JSON.stringify({ orderNo: merchantTradeNo, couponValue, shippingFee, recipient: { name: checkoutFormData.name, phone: checkoutFormData.phone }, pickupStore: checkoutFormData.storeInfo, logisticsId: logisticsData.AllPayLogisticsID || '', createdAt: Date.now() }));
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = paymentData.paymentUrl;
+        Object.keys(paymentData.formData || {}).forEach((key) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = paymentData.formData[key];
+            form.appendChild(input);
         });
-        const logisticsData = await logisticsResponse.json();
-        if (!logisticsResponse.ok || !logisticsData.success) throw new Error('LogisticsCreateFailed');
-        // 付款 API（Vercel）回傳的是 HTML（內含自動送出表單），不是 JSON
-const paymentResponse = await fetch(`${getFunctionBaseUrl()}/api/ecpay-payment`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    MerchantTradeNo: logisticsData.MerchantTradeNo || merchantTradeNo,
-    TotalAmount: totalAmount,
-    TradeDesc: 'MessyTT&L2i訂單',
-    ItemName: buildItemNameForEcpay()
-  })
-});
-
-const paymentHtml = await paymentResponse.text();
-if (!paymentResponse.ok) throw new Error('PaymentCreateFailed');
-if (!paymentHtml || paymentHtml.length < 200) throw new Error('PaymentHtmlInvalid');
-
-// 用新視窗承接（避免導向把你的結帳頁洗掉）
-const payWin = window.open('about:blank', `ecpayPay_${Date.now()}`);
-if (!payWin) throw new Error('PopupBlocked');
-
-payWin.document.open();
-payWin.document.write(paymentHtml);
-payWin.document.close();
+        document.body.appendChild(form);
+        form.submit();
     } catch (e) {
         const err = document.getElementById('checkoutStep3Error');
         err.innerText = e && e.message === 'AmountTooLow' ? '最終金額不得低於 NT$ 1，請調整購物金後重試。' : '支付過程失敗，請稍後重試。';
@@ -1231,7 +1183,11 @@ function filterProducts(category) {
     cards.forEach((card) => { card.style.display = (category === 'ALL' || card.dataset.category === category) ? '' : 'none'; });
 }
 
-function addToCartById(id, size) { const product = PRODUCTS[id]; if (!product) return; addToCart(id, product.name, product.price, product.images[0], size); }
+window.addToCartById = function addToCartById(id, size) {
+    const product = PRODUCTS[id];
+    if (!product) return;
+    addToCart(id, product.name, product.price, product.images[0], size);
+};
 
 function showProductDetail(id) {
     const product = PRODUCTS[id];
@@ -1274,8 +1230,7 @@ function showProductDetail(id) {
 function closeProductDetail() { document.getElementById('productDetailOverlay').style.display = 'none'; document.body.style.overflow = ''; _currentDetailProduct = null; }
 function addToCartFromDetail() { if (!_currentDetailProduct) return; const size = document.getElementById('detailSizeSelect').value; const { id, name, price, images } = _currentDetailProduct; addToCart(id, name, price, images[0], size); showToast(`已加入購物車：${name} (${size})`); }
 function buyNow() { if (!_currentDetailProduct) return; const size = document.getElementById('detailSizeSelect').value; const { id, name, price, images } = _currentDetailProduct; addToCart(id, name, price, images[0], size); closeProductDetail(); togglePanel('cart-drawer'); }
- 
 </script>
- 
+
 </body>
 </html>
