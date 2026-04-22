@@ -79,11 +79,22 @@ function renderStoreSelectedHtml(store) {
     </script></body></html>`;
 }
 
-function parseBody(body) {
+function parseBody(body, headers) {
   if (!body) return {};
-  if (typeof body === 'object') return body;
+  if (typeof body === 'object' && !Buffer.isBuffer(body)) return body;
+
+  const raw = Buffer.isBuffer(body) ? body.toString('utf8') : String(body);
+  const contentType = String((headers && (headers['content-type'] || headers['Content-Type'])) || '').toLowerCase();
+
+  if (contentType.includes('application/x-www-form-urlencoded') || (raw.includes('=') && raw.includes('&'))) {
+    const params = new URLSearchParams(raw);
+    const obj = {};
+    params.forEach((value, key) => { obj[key] = value; });
+    return obj;
+  }
+
   try {
-    return JSON.parse(body);
+    return JSON.parse(raw);
   } catch (e) {
     return {};
   }
@@ -126,7 +137,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const body = parseBody(req.body);
+    const body = parseBody(req.body, req.headers);
     if (hasStoreSelectionPayload(body)) {
       const store = parseStoreFromQuery(body);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
