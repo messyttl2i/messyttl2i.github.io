@@ -1,9 +1,13 @@
 const crypto = require('crypto');
 
-const MERCHANT_ID = process.env.ECPAY_MERCHANT_ID || process.env.ECPAY_MERCHANTID || process.env.MERCHANT_ID;
-const HASH_KEY = process.env.ECPAY_LOGISTICS_HASH_KEY || process.env.ECPAY_HASH_KEY || process.env.ECPAY_HASHKEY;
-const HASH_IV = process.env.ECPAY_LOGISTICS_HASH_IV || process.env.ECPAY_HASH_IV || process.env.ECPAY_HASHIV;
-const ECPAY_MAP_URL = process.env.ECPAY_LOGISTICS_MAP_URL || 'https://logistics.ecpay.com.tw/Express/map';
+function getRuntimeConfig() {
+  return {
+    merchantId: process.env.ECPAY_MERCHANT_ID || process.env.ECPAY_MERCHANTID || process.env.MERCHANT_ID || '',
+    hashKey: process.env.ECPAY_LOGISTICS_HASH_KEY || process.env.ECPAY_HASH_KEY || process.env.ECPAY_HASHKEY || '',
+    hashIv: process.env.ECPAY_LOGISTICS_HASH_IV || process.env.ECPAY_HASH_IV || process.env.ECPAY_HASHIV || '',
+    ecpayMapUrl: process.env.ECPAY_LOGISTICS_MAP_URL || 'https://logistics.ecpay.com.tw/Express/map'
+  };
+}
 
 function getSiteUrl() {
   // 1. Manual override (highest priority)
@@ -58,6 +62,23 @@ function parseStoreFromQuery(query) {
   };
 }
 
+function hasStoreSelectionPayload(data) {
+  if (!data || typeof data !== 'object') return false;
+  return Boolean(data.CVSStoreID || data.StoreID || data.CVSStoreName || data.StoreName || data.CVSAddress || data.StoreAddress || data.CVSTelephone || data.StorePhone);
+}
+
+function renderStoreSelectedHtml(store) {
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Store Selected</title></head><body><script>
+      (function () {
+        var payload = ${JSON.stringify({ type: 'CVS_SELECTION', ...store })};
+        if (window.opener && window.opener !== window) { window.opener.postMessage(payload, '*'); }
+        if (window.parent && window.parent !== window) { window.parent.postMessage(payload, '*'); }
+        setTimeout(function () { window.close(); }, 300);
+        document.body.innerHTML = '<p>門市已選擇完成，視窗即將關閉...</p>';
+      })();
+    </script></body></html>`;
+}
+
 function parseBody(body) {
   if (!body) return {};
   if (typeof body === 'object') return body;
@@ -70,6 +91,7 @@ function parseBody(body) {
 
 module.exports = async (req, res) => {
   setCors(res);
+  const config = getRuntimeConfig();
 
   if (req.method === 'OPTIONS') {
     res.status(204).end();
@@ -78,28 +100,23 @@ module.exports = async (req, res) => {
 
   const siteUrl = getSiteUrl();
   const missing = [];
-  if (!MERCHANT_ID) missing.push('ECPAY_MERCHANT_ID');
-  if (!HASH_KEY) missing.push('ECPAY_LOGISTICS_HASH_KEY / ECPAY_HASH_KEY');
-  if (!HASH_IV) missing.push('ECPAY_LOGISTICS_HASH_IV / ECPAY_HASH_IV');
+  if (!config.merchantId) missing.push('ECPAY_MERCHANT_ID');
+  if (!config.hashKey) missing.push('ECPAY_LOGISTICS_HASH_KEY / ECPAY_HASH_KEY');
+  if (!config.hashIv) missing.push('ECPAY_LOGISTICS_HASH_IV / ECPAY_HASH_IV');
   if (!siteUrl) missing.push('SITE_URL (or VERCEL_PROJECT_PRODUCTION_URL)');
   if (missing.length) {
-    res.status(500).json({ success: false, error: 'MissingEcpayLogisticsConfig', missing });
+    res.status(500).json({ success: false, error: 'MissingEcpayLogisticsConfig', message: `Missing config: ${missing.join(', ')}`, missing });
     return;
   }
 
   if (req.method === 'GET') {
     const store = parseStoreFromQuery(req.query || {});
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Store Selected</title></head><body><script>
-      (function () {
-        var payload = ${JSON.stringify({ type: 'CVS_SELECTION', ...store })};
-        if (window.opener && window.opener !== window) { window.opener.postMessage(payload, '*'); }
-        if (window.parent && window.parent !== window) { window.parent.postMessage(payload, '*'); }
-        setTimeout(function () { window.close(); }, 300);
-        document.body.innerHTML = '<p>門市已選擇完成，視窗即將關閉...</p>';
-      })();
-    </script></body></html>`;
+    if (!hasStoreSelectionPayload(req.query || {})) {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.status(200).send(html);
+    res.status(200).send(renderStoreSelectedHtml(store));
     return;
   }
 
@@ -110,10 +127,16 @@ module.exports = async (req, res) => {
 
   try {
     const body = parseBody(req.body);
+    if (hasStoreSelectionPayload(body)) {
+      const store = parseStoreFromQuery(body);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.status(200).send(renderStoreSelectedHtml(store));
+      return;
+    }
     const merchantTradeNo = normalizeTradeNo(body.MerchantTradeNo);
     const device = body.Device === 1 ? '1' : '0';
     const params = {
-      MerchantID: MERCHANT_ID,
+      MerchantID: config.merchantId,
       MerchantTradeNo: merchantTradeNo,
       LogisticsType: 'CVS',
       LogisticsSubType: 'UNIMARTC2C',
@@ -121,11 +144,11 @@ module.exports = async (req, res) => {
       ServerReplyURL: `${siteUrl}/api/ecpay-logistics-map`,
       Device: device
     };
-    params.CheckMacValue = buildCheckMacValue(params, HASH_KEY, HASH_IV);
+    params.CheckMacValue = buildCheckMacValue(params, config.hashKey, config.hashIv);
 
     res.status(200).json({
       success: true,
-      eMapUrl: ECPAY_MAP_URL,
+      eMapUrl: config.ecpayMapUrl,
       formData: params,
       MerchantTradeNo: merchantTradeNo
     });
