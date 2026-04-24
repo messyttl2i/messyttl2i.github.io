@@ -354,7 +354,7 @@
             <div class="product-info">
                 <div class="product-name"><a class="product-name-link" onclick="showProductDetail('1')">Cyber Butterfly Necklace</a></div>
                 <div class="product-price">NT$ 2,580</div>
-                <button class="btn btn-full" onclick="addToCartById('1', '')">Add to Bag</button>
+                <button class="btn btn-full" type="button" onclick="addToCartById('1', 1)">Add to Bag</button>
             </div>
         </div>
     </div>
@@ -425,6 +425,26 @@
 <div id="toast">操作成功</div>
 
 <script>
+ window.cart = window.cart || [];
+function addToCartById(id, qty = 1) {
+  id = String(id);
+  qty = Number(qty);
+  if (!Number.isFinite(qty) || qty <= 0) qty = 1;
+
+  const item = window.cart.find(x => x.id === id);
+  if (item) item.qty += qty;
+  else window.cart.push({ id, qty });
+
+  try {
+    localStorage.setItem('cart', JSON.stringify(window.cart));
+  } catch {}
+
+  console.log('[cart]', window.cart);
+
+  // 如果你有更新購物車 UI 的函式就呼叫
+  if (typeof renderCart === 'function') renderCart();
+}
+ 
 const EMAILJS_CONFIG = {
     publicKey: 'm1fvagOxoo5vaDvX1',
     serviceId: 'service_pzf7lvt',
