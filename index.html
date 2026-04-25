@@ -490,10 +490,9 @@ let autoplay = null;
 
 <script>
 const ECPAY_CONFIG = {
-  merchantId: '3483323',
-  // ✅ 改成你的 Vercel 網域（有 /api 的那個）
-  apiBaseUrl: 'https://messyttl2i-github-io.vercel.app',
-  siteUrl: 'https://messyttl2i.github.io'
+    merchantId: '3483323',
+    apiBaseUrl: 'https://messyttl2i-github-io.vercel.app',
+    siteUrl: 'https://messyttl2i.github.io'
 };
 
 const EMAP_TIMEOUT_MS = 5 * 60 * 1000;
@@ -718,10 +717,10 @@ function handleLogout() { sessionStorage.removeItem('messy_session'); currentUse
 function getFunctionBaseUrl() {
     const origin = (location.origin || '').toLowerCase();
     const preferredExternal = (ECPAY_CONFIG.apiBaseUrl || '').trim();
-    // Opened as local file, about:blank, or unknown origin: use external endpoint.
+
     if (!origin || origin === 'null' || location.protocol === 'file:') return preferredExternal;
-    // GitHub Pages cannot execute server functions; use external endpoint.
     if (origin.includes('github.io')) return preferredExternal;
+
     return location.origin;
 }
 
@@ -731,13 +730,14 @@ function buildFunctionUrl(baseUrl, functionName) {
     return `${safeBase}/api/${functionName}`;
 }
 
+ 
 function getFunctionBaseCandidates() {
-  const values = [
-    getFunctionBaseUrl(),
-    ECPAY_CONFIG.apiBaseUrl
-  ].map((v) => String(v || '').trim()).filter(Boolean);
+    const values = [
+        getFunctionBaseUrl(),
+        ECPAY_CONFIG.apiBaseUrl
+    ].map((v) => String(v || '').trim()).filter(Boolean);
 
-  return Array.from(new Set(values));
+    return Array.from(new Set(values));
 }
 
 async function postToFunctionWithFallback(functionName, payload) {
@@ -767,14 +767,19 @@ async function postToFunctionWithFallback(functionName, payload) {
  function buildItemNameForEcpay() { return (cart.map((item) => `${item.name}x${item.qty}`).join('#').slice(0, 200)) || 'MessyTT&L2i 商品'; }
  function generateTradeNo() { const nowPart = Date.now().toString().slice(-10); const randomArr = new Uint8Array(3); crypto.getRandomValues(randomArr); const randPart = Array.from(randomArr).map((v) => String(v % 10)).join(''); return `MSY${nowPart}${randPart}`; }
  
-function addToCart(id, name, price, img, size) {
-    const cartId = size ? `${id}_${size}` : id;
-    const displayName = size ? `${name} (${size})` : name;
-    const existing = cart.find((item) => item.id === cartId);
-    if (existing) existing.qty += 1; else cart.push({ id: cartId, name: displayName, price, img, qty: 1 });
-    localStorage.setItem('messy_cart', JSON.stringify(cart));
-    updateCartUI();
-    togglePanel('cart-drawer');
+ function addToCartById(id, qty = 1, size = '') {
+    id = String(id);
+    qty = Number(qty);
+    if (!Number.isFinite(qty) || qty <= 0) qty = 1;
+
+    const product = PRODUCTS[id];
+    if (!product) {
+        console.warn('[cart] product not found:', id);
+        return;
+    }
+    for (let i = 0; i < qty; i++) {
+        addToCart(id, product.name, product.price, product.images?.[0] || '', size || '');
+    }
 }
 
 function updateCartUI() {
@@ -1115,8 +1120,33 @@ function initCheckoutFromQuery() {
     }
 }
 
-function startAutoplay(el) { if (!el) return; stopAutoplay(); autoplay = setInterval(() => { el.scrollLeft += el.offsetWidth; if (el.scrollLeft + el.offsetWidth >= el.scrollWidth) el.scrollLeft = 0; }, 2500); }
-function stopAutoplay() { if (autoplay) { clearInterval(autoplay); autoplay = null; } }
+function startAutoplay(el) {
+    try {
+        stopAutoplay(el);
+        const intervalId = window.setInterval(() => {
+            if (!el) return;
+            const maxScrollLeft = el.scrollWidth - el.clientWidth;
+            if (maxScrollLeft <= 0) return;
+
+            const next = el.scrollLeft + el.clientWidth;
+            el.scrollTo({ left: next > maxScrollLeft ? 0 : next, behavior: 'smooth' });
+        }, 1800);
+
+        el.dataset.autoplayIntervalId = String(intervalId);
+    } catch (e) {
+        console.warn('startAutoplay failed', e);
+    }
+}
+function stopAutoplay(el) {
+    try {
+        const id = Number(el?.dataset?.autoplayIntervalId);
+        if (Number.isFinite(id)) window.clearInterval(id);
+        if (el && el.dataset) delete el.dataset.autoplayIntervalId;
+    } catch (e) {
+        console.warn('stopAutoplay failed', e);
+    }
+}
+ 
 function showToast(msg) { const t = document.getElementById('toast'); if (!t) return; t.innerText = msg; t.style.opacity = '1'; setTimeout(() => { t.style.opacity = '0'; }, 2500); }
 
 function handleEditProfile() {
