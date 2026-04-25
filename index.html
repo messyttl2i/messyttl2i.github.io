@@ -425,7 +425,7 @@
 <div id="toast">操作成功</div>
 
 <script>
- function addToCartById(id, qty = 1, size = '') {
+function addToCartById(id, qty = 1, size = '') {
   id = String(id);
   qty = Number(qty);
   if (!Number.isFinite(qty) || qty <= 0) qty = 1;
@@ -436,9 +436,27 @@
     return;
   }
 
-  for (let i = 0; i < qty; i++) {
-    addToCart(id, product.name, product.price, product.images?.[0] || '', size || '');
+  const normalizedSize = String(size || '').trim();
+
+  // 同一個商品 + 同一個 size 視為同一項
+  const keyName = normalizedSize ? `${product.name} (${normalizedSize})` : product.name;
+
+  const existing = cart.find((item) => item.id === id && item.name === keyName);
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({
+      id,
+      name: keyName,
+      price: Number(product.price) || 0,
+      qty,
+      img: (product.images && product.images[0]) ? product.images[0] : ''
+    });
   }
+
+  localStorage.setItem('messy_cart', JSON.stringify(cart));
+  updateCartUI();
+  showToast('已加入購物車');
 }
  
 const EMAILJS_CONFIG = {
