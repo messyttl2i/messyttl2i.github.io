@@ -1229,12 +1229,6 @@ function filterProducts(category) {
     cards.forEach((card) => { card.style.display = (category === 'ALL' || card.dataset.category === category) ? '' : 'none'; });
 }
 
-// 保留一個全域入口，但不要覆蓋前面已經寫好的 addToCartById 版本
-window.addToCartById = function (id, size, qty = 1) {
-    // 呼叫前面 428 行那個 addToCartById（寫入 messy_cart + updateCartUI）
-    return addToCartById(id, qty, size);
-};
-
 function showProductDetail(id) {
     const product = PRODUCTS[id];
     if (!product) return;
