@@ -779,21 +779,6 @@ async function postToFunctionWithFallback(functionName, payload) {
  function getMerchantTradeDate() { const now = new Date(); const pad = (n) => String(n).padStart(2, '0'); return `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`; }
  function buildItemNameForEcpay() { return (cart.map((item) => `${item.name}x${item.qty}`).join('#').slice(0, 200)) || 'MessyTT&L2i 商品'; }
  function generateTradeNo() { const nowPart = Date.now().toString().slice(-10); const randomArr = new Uint8Array(3); crypto.getRandomValues(randomArr); const randPart = Array.from(randomArr).map((v) => String(v % 10)).join(''); return `MSY${nowPart}${randPart}`; }
- 
- function addToCartById(id, qty = 1, size = '') {
-    id = String(id);
-    qty = Number(qty);
-    if (!Number.isFinite(qty) || qty <= 0) qty = 1;
-
-    const product = PRODUCTS[id];
-    if (!product) {
-        console.warn('[cart] product not found:', id);
-        return;
-    }
-    for (let i = 0; i < qty; i++) {
-        addToCart(id, product.name, product.price, product.images?.[0] || '', size || '');
-    }
-}
 
 function updateCartUI() {
     const list = document.getElementById('cartItemsList');
