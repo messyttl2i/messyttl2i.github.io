@@ -425,24 +425,20 @@
 <div id="toast">操作成功</div>
 
 <script>
- window.cart = window.cart || [];
-function addToCartById(id, qty = 1) {
+ function addToCartById(id, qty = 1, size = '') {
   id = String(id);
   qty = Number(qty);
   if (!Number.isFinite(qty) || qty <= 0) qty = 1;
 
-  const item = window.cart.find(x => x.id === id);
-  if (item) item.qty += qty;
-  else window.cart.push({ id, qty });
+  const product = PRODUCTS[id];
+  if (!product) {
+    console.warn('[cart] product not found:', id);
+    return;
+  }
 
-  try {
-    localStorage.setItem('cart', JSON.stringify(window.cart));
-  } catch {}
-
-  console.log('[cart]', window.cart);
-
-  // 如果你有更新購物車 UI 的函式就呼叫
-  if (typeof renderCart === 'function') renderCart();
+  for (let i = 0; i < qty; i++) {
+    addToCart(id, product.name, product.price, product.images?.[0] || '', size || '');
+  }
 }
  
 const EMAILJS_CONFIG = {
@@ -488,7 +484,6 @@ let _fpVerifiedEmail = null;
 let _currentDetailProduct = null;
 let autoplay = null;
 
-<script>
 const ECPAY_CONFIG = {
     merchantId: '3483323',
     apiBaseUrl: 'https://messyttl2i-github-io.vercel.app',
