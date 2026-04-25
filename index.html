@@ -1229,10 +1229,10 @@ function filterProducts(category) {
     cards.forEach((card) => { card.style.display = (category === 'ALL' || card.dataset.category === category) ? '' : 'none'; });
 }
 
-window.addToCartById = function addToCartById(id, size) {
-    const product = PRODUCTS[id];
-    if (!product) return;
-    addToCart(id, product.name, product.price, product.images[0], size);
+// 保留一個全域入口，但不要覆蓋前面已經寫好的 addToCartById 版本
+window.addToCartById = function (id, size, qty = 1) {
+    // 呼叫前面 428 行那個 addToCartById（寫入 messy_cart + updateCartUI）
+    return addToCartById(id, qty, size);
 };
 
 function showProductDetail(id) {
@@ -1274,8 +1274,18 @@ function showProductDetail(id) {
 }
 
 function closeProductDetail() { document.getElementById('productDetailOverlay').style.display = 'none'; document.body.style.overflow = ''; _currentDetailProduct = null; }
-function addToCartFromDetail() { if (!_currentDetailProduct) return; const size = document.getElementById('detailSizeSelect').value; const { id, name, price, images } = _currentDetailProduct; addToCart(id, name, price, images[0], size); showToast(`已加入購物車：${name} (${size})`); }
-function buyNow() { if (!_currentDetailProduct) return; const size = document.getElementById('detailSizeSelect').value; const { id, name, price, images } = _currentDetailProduct; addToCart(id, name, price, images[0], size); closeProductDetail(); togglePanel('cart-drawer'); }
+function addToCartFromDetail() {
+  if (!_currentDetailProduct) return;
+  const size = document.getElementById('detailSizeSelect').value;
+  addToCartById(_currentDetailProduct.id, 1, size);
+}
+function buyNow() {
+  if (!_currentDetailProduct) return;
+  const size = document.getElementById('detailSizeSelect').value;
+  addToCartById(_currentDetailProduct.id, 1, size);
+  closeProductDetail();
+  togglePanel('cart-drawer');
+}
 </script>
 
 </body>
