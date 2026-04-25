@@ -488,13 +488,14 @@ let _fpVerifiedEmail = null;
 let _currentDetailProduct = null;
 let autoplay = null;
 
+<script>
 const ECPAY_CONFIG = {
-    merchantId: '3483323',
-    // Fill this after Vercel deploy, e.g. https://messyttl2i.vercel.app
-    apiBaseUrl: '',
-    netlifyUrl: 'https://messyttl2i.netlify.app',
-    siteUrl: 'https://messyttl2i.github.io'
+  merchantId: '3483323',
+  // ✅ 改成你的 Vercel 網域（有 /api 的那個）
+  apiBaseUrl: 'https://messyttl2i-github-io.vercel.app',
+  siteUrl: 'https://messyttl2i.github.io'
 };
+
 const EMAP_TIMEOUT_MS = 5 * 60 * 1000;
 let checkoutStep = 1;
 const checkoutFormData = { name: '', phone: '', shipping: 'seven-eleven-pickup', storeId: '', storeInfo: null, useCoupon: false, couponAmount: 0 };
@@ -716,7 +717,7 @@ function handleLogout() { sessionStorage.removeItem('messy_session'); currentUse
  function getShippingFee() { return 0; }
 function getFunctionBaseUrl() {
     const origin = (location.origin || '').toLowerCase();
-    const preferredExternal = (ECPAY_CONFIG.apiBaseUrl || ECPAY_CONFIG.netlifyUrl || '').trim();
+    const preferredExternal = (ECPAY_CONFIG.apiBaseUrl || '').trim();
     // Opened as local file, about:blank, or unknown origin: use external endpoint.
     if (!origin || origin === 'null' || location.protocol === 'file:') return preferredExternal;
     // GitHub Pages cannot execute server functions; use external endpoint.
@@ -727,19 +728,16 @@ function getFunctionBaseUrl() {
 function buildFunctionUrl(baseUrl, functionName) {
     const safeBase = String(baseUrl || '').replace(/\/$/, '');
     if (!safeBase) return '';
-    if (safeBase.includes('netlify.app') || safeBase.includes('netlify.live')) {
-        return `${safeBase}/.netlify/functions/${functionName}`;
-    }
     return `${safeBase}/api/${functionName}`;
 }
 
 function getFunctionBaseCandidates() {
-    const values = [
-        getFunctionBaseUrl(),
-        ECPAY_CONFIG.apiBaseUrl,
-        ECPAY_CONFIG.netlifyUrl
-    ].map((v) => String(v || '').trim()).filter(Boolean);
-    return Array.from(new Set(values));
+  const values = [
+    getFunctionBaseUrl(),
+    ECPAY_CONFIG.apiBaseUrl
+  ].map((v) => String(v || '').trim()).filter(Boolean);
+
+  return Array.from(new Set(values));
 }
 
 async function postToFunctionWithFallback(functionName, payload) {
