@@ -379,7 +379,8 @@
             <div class="form-group"><label>收件人姓名 *</label><input type="text" id="recipientName"></div>
             <div class="form-group"><label>收件人電話 *</label><input type="tel" id="recipientPhone" placeholder="09xxxxxxxx"></div>
             <div class="form-group"><label>送貨方式</label><div class="checkout-shipping-fixed"><label><input type="radio" checked disabled> 台灣本島 7-11 到店取貨</label><div class="checkout-shipping-meta">（免運費・不付款・3-5 天內取件）</div></div></div>
-            <div class="form-group"><label>選擇取貨門市 * <span class="required-badge">必選</span></label><div id="storeSelectionContainer"><button id="openEMapBtn" class="btn btn-full checkout-inline-btn" type="button">選擇 7-11 門市</button><div class="checkout-store-info" id="selectedStoreInfo" style="display:none;"><div><strong>已選擇門市</strong></div><div>門市名稱：<span id="storeName"></span></div><div>地址：<span id="storeAddress"></span></div><div>電話：<span id="storePhone"></span></div><div>門市編號：<span id="storeCode"></span></div></div></div></div>
+            <div class="form-group"><label>選擇取貨門市 * <span class="required-badge">必選</span></label><div id="storeSelectionContainer"><button id="openEMapBtn" type="button" class="btn btn-full">選擇門市</button><div class="checkout-store-info" id="selectedStoreInfo" style="display:none;"><div><strong>已選擇門市</strong></div><div>門市名稱：<span id="storeName"></span></div><div>地址：<span id="storeAddress"></span></div><div>電話：<span id="storePhone"></span></div><div>門市編號：<span id="storeCode"></span></div></div></div></div>
+
             <input type="hidden" id="cvsStoreID"><input type="hidden" id="cvsStoreName"><input type="hidden" id="cvsStoreAddress"><input type="hidden" id="cvsStorePhone">
             <div class="checkout-total-row"><span>運費</span><strong id="checkoutShippingFeeLabel">NT$ 0（免運）</strong></div>
             <div class="checkout-error" id="checkoutStep2Error"></div>
@@ -997,68 +998,38 @@ async function parseJsonResponse(response) {
     catch (e) { data = { success: false, message: raw || 'Invalid JSON response' }; }
     return { data, raw };
 }
- async function openEMapSelector() {
-  // A) 一進來就先同步開窗（不能 await 前做）
-  
-  console.log('[emap] after open, before fetch');
-const { data } = await postToFunctionWithFallback('ecpay-logistics-map', payload);
-console.log('[emap] after fetch', data);
-  
+ async function openEMapSelector(event) {
+  console.log('[emap] 1 enter openEMapSelector');
+
+  // 防止 button submit / form refresh
+  if (event) {
+    event.preventDefault?.();
+    event.stopPropagation?.();
+  }
+
+  console.log('[emap] 2 after preventDefault');
+
   const popupName = `emapPopup_${Date.now()}`;
-  const popup = window.open('about:blank', popupName, 'width=980,height=760,noopener,noreferrer');
+  const popup = window.open('about:blank', popupName, 'width=980,height=760');
+
+  console.log('[emap] 3 popup:', popup);
 
   if (!popup) {
     showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
     return;
   }
 
-  // 可選：先塞個提示文字，避免空白
   popup.document.write('<p style="font-family:sans-serif;padding:16px;">載入 7-11 門市地圖中...</p>');
 
-  try {
-    // B) 再去打後端拿 eMapUrl + formData（這裡可以 await）
-    // 下面 payload 請用你後端需要的欄位（我先用空物件示範）
-    const payload = {
-      // 如果後端要帶訂單資訊/商店類型/回傳網址，填在這
-    };
+  console.log('[emap] 4 before fetch');
 
-    // 這個 function 你原本就有：postToFunctionWithFallback(functionName, payload)
-    const { data } = await postToFunctionWithFallback('ecpay-logistics-map', payload);
+  const payload = {};
+  const result = await postToFunctionWithFallback('ecpay-logistics-map', payload);
 
-    // 你後端回傳的格式可能是 data.eMapUrl / data.formData
-    const eMapUrl = (data && (data.eMapUrl || data.url)) ? String(data.eMapUrl || data.url).trim() : '';
-    const formData = (data && (data.formData || data.params)) ? (data.formData || data.params) : {};
+  console.log('[emap] 5 after fetch result:', result);
 
-    if (!eMapUrl) {
-      popup.close();
-      showToast('取得門市地圖連結失敗（eMapUrl 為空）');
-      return;
-    }
-
-    // C) 拿到資料後，用 form POST 導到剛開的 popup
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = eMapUrl;
-    form.target = popupName;
-
-    Object.keys(formData).forEach((key) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = key;
-      input.value = String(formData[key] ?? '');
-      form.appendChild(input);
-    });
-
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
-
-    showToast('請在新視窗完成 7-11 門市選擇');
-  } catch (err) {
-    try { popup.close(); } catch {}
-    console.error(err);
-    showToast('門市地圖載入失敗，請稍後再試');
-  }
+  // 先暫停，確認確實有回來
+  showToast('fetch 已完成，請看 console');
 }
 
 window.stopAutoplay = function () {
