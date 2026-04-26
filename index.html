@@ -999,6 +999,11 @@ async function parseJsonResponse(response) {
 }
  async function openEMapSelector() {
   // A) 一進來就先同步開窗（不能 await 前做）
+  
+  console.log('[emap] after open, before fetch');
+const { data } = await postToFunctionWithFallback('ecpay-logistics-map', payload);
+console.log('[emap] after fetch', data);
+  
   const popupName = `emapPopup_${Date.now()}`;
   const popup = window.open('about:blank', popupName, 'width=980,height=760,noopener,noreferrer');
 
