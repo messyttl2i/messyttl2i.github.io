@@ -425,6 +425,15 @@
 <div id="toast">操作成功</div>
 
 <script>
+  const PRODUCTS = {
+    '1': {
+        name: 'Cyber Butterfly Necklace',
+        price: 2580,
+        images: ['images/S__81002508_0.jpg', 'images/S__81002509_0.jpg', 'images/S__81002510_0.jpg', 'images/S__81002511_0.jpg']
+    }
+};
+
+ let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
 function addToCartById(id, qty = 1, size = '') {
   id = String(id);
   qty = Number(qty);
@@ -487,15 +496,6 @@ async function sendWelcomeEmail(name, email) {
     }
 }
 
-const PRODUCTS = {
-    '1': {
-        name: 'Cyber Butterfly Necklace',
-        price: 2580,
-        images: ['images/S__81002508_0.jpg', 'images/S__81002509_0.jpg', 'images/S__81002510_0.jpg', 'images/S__81002511_0.jpg']
-    }
-};
-
-let cart = JSON.parse(localStorage.getItem('messy_cart')) || [];
 let messy_users = JSON.parse(localStorage.getItem('messy_users')) || {};
 let currentUser = null;
 let _fpVerifiedEmail = null;
