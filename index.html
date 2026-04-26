@@ -529,6 +529,8 @@ window.onload = () => {
 
 window.addEventListener('message', (event) => {
     if (!event || !event.data || event.data.type !== 'CVS_SELECTION') return;
+ try { if (eMapPopupRef && !eMapPopupRef.closed) eMapPopupRef.close(); } catch (_) {}
+eMapPopupRef = null;
     const selected = event.data;
     document.getElementById('cvsStoreID').value = selected.StoreID || '';
     document.getElementById('cvsStoreName').value = selected.StoreName || '';
@@ -955,7 +957,8 @@ function openEMapModal(data) {
   const popupName = `emapPopup_${Date.now()}`;
 
   // 1) 先同步開窗（一定要在 click 事件同步呼叫）
-  const popup = window.open('about:blank', popupName, 'width=980,height=760,noopener,noreferrer');
+ const popup = window.open('about:blank', popupName, 'width=980,height=760');
+eMapPopupRef = popup;
   if (!popup) {
     showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
     return;
