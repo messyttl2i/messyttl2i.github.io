@@ -951,29 +951,21 @@ function updateCheckoutSummary() {
 function clearCheckoutError() { const err = document.getElementById('checkoutStep3Error'); if (!err) return; err.style.display = 'none'; err.innerText = ''; }
 
 function openEMapModal(data) {
-    const popupName = `emapPopup_${Date.now()}`;
-    const popup = window.open('', popupName, 'width=980,height=760,noopener,noreferrer');
-    if (!popup) {
-        showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
-        return;
-    }
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = data.eMapUrl;
-    form.target = popupName;
-    Object.keys(data.formData || {}).forEach((key) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = data.formData[key];
-        form.appendChild(input);
-    });
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
-    showToast('請在新視窗完成 7-11 門市選擇');
-}
+  const url = data && data.eMapUrl ? String(data.eMapUrl) : '';
+  if (!url) {
+    showToast('取得門市地圖連結失敗，請稍後再試');
+    return;
+  }
 
+  const popup = window.open(url, `emap_${Date.now()}`, 'width=980,height=760,noopener,noreferrer');
+  if (!popup) {
+    showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
+    return;
+  }
+
+  showToast('請在新視窗完成 7-11 門市選擇');
+}
+ 
 function closeEMapModal() {
     const modal = document.getElementById('eMapModal');
     const mount = document.getElementById('eMapMount');
