@@ -951,27 +951,43 @@ function updateCheckoutSummary() {
 function clearCheckoutError() { const err = document.getElementById('checkoutStep3Error'); if (!err) return; err.style.display = 'none'; err.innerText = ''; }
 
 function openEMapModal(data) {
-  const url = data && data.eMapUrl ? String(data.eMapUrl) : '';
-  if (!url) {
-    showToast('取得門市地圖連結失敗，請稍後再試');
-    return;
-  }
+  const popupName = `emapPopup_${Date.now()}`;
 
-  const popup = window.open(url, `emap_${Date.now()}`, 'width=980,height=760,noopener,noreferrer');
+  // 1) 先同步開窗（一定要在 click 事件同步呼叫）
+  const popup = window.open('about:blank', popupName, 'width=980,height=760,noopener,noreferrer');
   if (!popup) {
     showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
     return;
   }
 
+  // 2) 檢查 eMapUrl
+  const actionUrl = (data && data.eMapUrl) ? String(data.eMapUrl).trim() : '';
+  if (!actionUrl) {
+    popup.close();
+    showToast('取得 7-11 地圖連結失敗（eMapUrl 為空）');
+    return;
+  }
+
+  // 3) 建立 form 並送出到 popup
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = actionUrl;
+  form.target = popupName;
+
+  const formData = data.formData || {};
+  Object.keys(formData).forEach((key) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = String(formData[key] ?? '');
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
+
   showToast('請在新視窗完成 7-11 門市選擇');
-}
- 
-function closeEMapModal() {
-    const modal = document.getElementById('eMapModal');
-    const mount = document.getElementById('eMapMount');
-    if (modal) modal.style.display = 'none';
-    if (mount) mount.innerHTML = '';
-    if (eMapTimeoutTimer) { clearTimeout(eMapTimeoutTimer); eMapTimeoutTimer = null; }
 }
 
 async function parseJsonResponse(response) {
