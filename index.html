@@ -998,40 +998,72 @@ async function parseJsonResponse(response) {
     catch (e) { data = { success: false, message: raw || 'Invalid JSON response' }; }
     return { data, raw };
 }
- async function openEMapSelector(event) {
-  console.log('[emap] 1 enter openEMapSelector');
+async function openEMapSelector(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
 
-  // 防止 button submit / form refresh
-  if (event) {
-    event.preventDefault?.();
-    event.stopPropagation?.();
-  }
-
-  console.log('[emap] 2 after preventDefault');
-
+  // 1) click 事件一進來就先開 popup（同步）
   const popupName = `emapPopup_${Date.now()}`;
   const popup = window.open('about:blank', popupName, 'width=980,height=760');
-
-  console.log('[emap] 3 popup:', popup);
-
   if (!popup) {
     showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
     return;
   }
 
-  popup.document.write('<p style="font-family:sans-serif;padding:16px;">載入 7-11 門市地圖中...</p>');
+  // 2) 再去 await 後端拿 eMapUrl / formData
+  const payload = {
+    MerchantTradeNo: typeof generateTradeNo === 'function' ? generateTradeNo() : `T${Date.now()}`,
+    Device: typeof isMobile === 'function' && isMobile() ? 1 : 0
+  };
 
-  console.log('[emap] 4 before fetch');
+  let resp;
+  try {
+    const result = await postToFunctionWithFallback('ecpay-logistics-map', payload);
+    resp = result?.data;
 
-  const payload = {};
-  const result = await postToFunctionWithFallback('ecpay-logistics-map', payload);
+    // 兼容不同回傳形狀
+    const payloadData =
+      (resp && resp.data && (resp.data.eMapUrl || resp.data.formData || resp.data.params))
+        ? resp.data
+        : (resp && resp.data && resp.data.data)
+          ? resp.data.data
+          : resp;
 
-  console.log('[emap] 5 after fetch result:', result);
+    const eMapUrl = String(payloadData?.eMapUrl || payloadData?.url || '').trim();
+    const formData = payloadData?.formData || payloadData?.params || {};
 
-  // 先暫停，確認確實有回來
-  showToast('fetch 已完成，請看 console');
+    if (!eMapUrl) {
+      console.error('[emap] Missing eMapUrl:', resp);
+      showToast('門市地圖載入失敗（eMapUrl 缺失）');
+      popup.close();
+      return;
+    }
+
+    // 3) form.submit 指向剛開的 popupName
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = eMapUrl;
+    form.target = popupName;
+
+    Object.entries(formData).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = String(value ?? '');
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+
+    showToast('請在新視窗完成 7-11 門市選擇');
+  } catch (err) {
+    console.error('[emap] openEMapSelector failed:', err, resp);
+    showToast('門市地圖載入失敗，請稍後再試');
+    try { popup.close(); } catch (_) {}
+  }
 }
-
+ 
 window.stopAutoplay = function () {
     if (window.autoplay) {
         clearInterval(window.autoplay);
