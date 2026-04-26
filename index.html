@@ -1003,50 +1003,39 @@ async function parseJsonResponse(response) {
     return { data, raw };
 }
 
-async function openEMapSelector(event) {
-  event?.prevent層級：
+ async function openEMapSelector(event) {
+  console.log('[emap] 1 enter openEMapSelector');
 
-- 你可能在用 `result.data.eMapUrl`
-- 但正確是 `result.data.data.eMapUrl`（或相反）
+  // 防止 button submit / form refresh
+  if (event) {
+    event.preventDefault?.();
+    event.stopPropagation?.();
+  }
 
-一旦 `eMapUrl`Default?.();
-  event?.stopPropagation?.();
+  console.log('[emap] 2 after preventDefault');
 
-  const trigger = document.getElementById('openEMapBtn');
-  if 取到空字串，你的 `form.action` 就是空的，`form.submit()` (trigger) trigger.disabled = true;
+  const popupName = `emapPopup_${Date.now()}`;
+  const popup = window.open('about:blank', popupName, 'width=980,height=760');
 
-  // 1) click 一進來就先開 popup（避免被擋）
- 不會導去地圖，所以 popup 會停在 about:blank / loading。
+  console.log('[emap] 3 popup:', popup);
 
----
-
-## 你下一步做這個就行
-1) 在 `openEMapSelector()` 加上 `window.__emapResult =  const popupName = `emapPopup_${Date.now()}`;
-  const popup = window.open('about:blank', popupName, 'width=980 result`
-2) 重新點一次按鈕,height=760');
   if (!popup) {
-    showToast('瀏覽器阻擋彈出視窗，請允
-3) 在 Console 打：
-
-```js
-window.__emapResult
-``許彈出視窗後再試一次');
-    if`
-
-把展開後看到的 JSON（至少含 eMapUrl (trigger) trigger.disabled = false;
+    showToast('瀏覽器阻擋彈出視窗，請允許彈出視窗後再試一次');
     return;
   }
 
- 、formData 在哪）貼我
+  popup.document.write('<p style="font-family:sans-serif;padding:16px;">載入 7-11 門市地圖中...</p>');
 
-我就能直接告訴 // 可選：讓使用者知道在載入
-  try {
-    popup.document.write('<p style你該改哪 2 行去正確取 `eMapUrl` / `formData`，地圖="font-family:sans-serif;padding:16px;">載入 7-11 門市地圖中...</p就會開了。>');
-  } catch (_) {}
+  console.log('[emap] 4 before fetch');
 
-  try {
-    // 2) 再去 await 後端拿 e
- 
+  const payload = {};
+  const result = await postToFunctionWithFallback('ecpay-logistics-map', payload);
+
+  console.log('[emap] 5 after fetch result:', result);
+
+  // 先暫停，確認確實有回來
+  showToast('fetch 已完成，請看 console');
+}
 window.stopAutoplay = function () {
     if (window.autoplay) {
         clearInterval(window.autoplay);
