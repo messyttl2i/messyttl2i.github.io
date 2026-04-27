@@ -953,6 +953,11 @@ function updateCheckoutSummary() {
 
 function clearCheckoutError() { const err = document.getElementById('checkoutStep3Error'); if (!err) return; err.style.display = 'none'; err.innerText = ''; }
 
+ function closeEMapModal() {
+  const modal = document.getElementById('eMapModal');
+  if (modal) modal.style.display = 'none';
+}
+ 
 function openEMapModal(data) {
   const popupName = `emapPopup_${Date.now()}`;
 
