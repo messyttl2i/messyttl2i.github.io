@@ -1093,10 +1093,12 @@ async function submitEcpayPayment() {
         const baseOrigin = allowedOrigins.includes(currentOrigin) ? currentOrigin : ECPAY_CONFIG.siteUrl;
         const returnBase = `${baseOrigin}${location.pathname}`;
         const logisticsResult = await postToFunctionWithFallback('ecpay-create-logistics-order', { MerchantTradeNo: merchantTradeNo, MerchantTradeDate: getMerchantTradeDate(), TotalAmount: totalAmount, TradeDesc: '商品訂單', ItemName: buildItemNameForEcpay(), ReceiverName: checkoutFormData.name, ReceiverPhone: checkoutFormData.phone, CVSStoreID: checkoutFormData.storeId });
-        const logisticsData = logisticsResult.data;
+        const logisticsResp = logisticsResult.data;
+        const logisticsData = logisticsResp.data || logisticsResp;
         const callbackBase = logisticsResult.base || getFunctionBaseUrl();
         const paymentResult = await postToFunctionWithFallback('ecpay-payment', { MerchantTradeNo: logisticsData.MerchantTradeNo || merchantTradeNo, MerchantTradeDate: getMerchantTradeDate(), TotalAmount: totalAmount, TradeDesc: 'MessyTT&L2i訂單', Items: cart.map((item) => ({ name: item.name, qty: item.qty })), ReturnURL: buildFunctionUrl(callbackBase, 'ecpay-payment'), OrderResultURL: `${returnBase}?payment=success&order=${merchantTradeNo}`, AllPayLogisticsID: logisticsData.AllPayLogisticsID || '', CVSStoreID: checkoutFormData.storeId });
-        const paymentData = paymentResult.data;
+        const paymentResp = paymentResult.data;
+        const paymentData = paymentResp.data || paymentResp;
         const couponValue = checkoutFormData.useCoupon ? Math.max(0, getCartSubtotal() + shippingFee - totalAmount) : 0;
         localStorage.setItem('messy_pending_order', JSON.stringify({ orderNo: merchantTradeNo, couponValue, shippingFee, recipient: { name: checkoutFormData.name, phone: checkoutFormData.phone }, pickupStore: checkoutFormData.storeInfo, logisticsId: logisticsData.AllPayLogisticsID || '', createdAt: Date.now() }));
         const form = document.createElement('form');
