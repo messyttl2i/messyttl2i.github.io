@@ -32,17 +32,21 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: { 'Content-Type': 'text/plain' }, body: 'Method Not Allowed' };
   }
 
+  if (!HASH_KEY || !HASH_IV) {
+    return { statusCode: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: '0|MissingHashConfig' };
+  }
+
   try {
     const params = {};
     const raw = event.body || '';
     new URLSearchParams(raw).forEach((value, key) => { params[key] = value; });
 
-    if (HASH_KEY && HASH_IV && !verifyCheckMacValue(params, HASH_KEY, HASH_IV)) {
+    if (!verifyCheckMacValue(params, HASH_KEY, HASH_IV)) {
       return { statusCode: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: '0|CheckMacValueFailed' };
     }
 
     return { statusCode: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: '1|OK' };
   } catch (_) {
-    return { statusCode: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: '1|OK' };
+    return { statusCode: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: '0|ParseError' };
   }
 };

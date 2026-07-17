@@ -54,16 +54,21 @@ module.exports = async (req, res) => {
     return;
   }
 
+  if (!HASH_KEY || !HASH_IV) {
+    res.status(200).send('0|MissingHashConfig');
+    return;
+  }
+
   try {
     const params = parseFormBody(req.body);
 
-    if (HASH_KEY && HASH_IV && !verifyCheckMacValue(params, HASH_KEY, HASH_IV)) {
+    if (!verifyCheckMacValue(params, HASH_KEY, HASH_IV)) {
       res.status(200).send('0|CheckMacValueFailed');
       return;
     }
 
     res.status(200).send('1|OK');
   } catch (_) {
-    res.status(200).send('1|OK');
+    res.status(200).send('0|ParseError');
   }
 };
