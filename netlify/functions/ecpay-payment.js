@@ -6,6 +6,8 @@ const HASH_IV = process.env.ECPAY_HASH_IV || process.env.ECPAY_LOGISTICS_HASH_IV
 const NETLIFY_SITE_URL = (process.env.SITE_URL || process.env.NETLIFY_SITE_URL || '').replace(/\/$/, '');
 const ECPAY_PAYMENT_URL = process.env.ECPAY_PAYMENT_URL || 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5';
 
+const DEFAULT_ITEM_NAME = 'MessyTT&L2i 商品';
+
 function ecpayEncode(value) {
   return encodeURIComponent(value)
     .replace(/%20/g, '+')
@@ -28,7 +30,8 @@ function buildCheckMacValue(params, hashKey, hashIv) {
 function normalizeTradeNo(input) {
   const cleaned = String(input || '').replace(/[^0-9A-Za-z]/g, '');
   if (cleaned.length >= 8) return cleaned.slice(0, 20);
-  return `PAY${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(0, 20);
+  const rand = crypto.randomBytes(4).toString('hex');
+  return `PAY${Date.now()}${rand}`.slice(0, 20);
 }
 
 function getMerchantTradeDate(dateInput) {
@@ -39,11 +42,11 @@ function getMerchantTradeDate(dateInput) {
 }
 
 function buildItemName(items) {
-  if (!Array.isArray(items) || !items.length) return 'MessyTT&L2i 商品';
+  if (!Array.isArray(items) || !items.length) return DEFAULT_ITEM_NAME;
   const merged = items
     .map((item) => `${String(item.name || '商品').replace(/[#\\|]/g, ' ')} x ${Math.max(1, parseInt(item.qty, 10) || 1)}`)
     .join('#');
-  return merged.slice(0, 200) || 'MessyTT&L2i 商品';
+  return merged.slice(0, 200) || DEFAULT_ITEM_NAME;
 }
 
 exports.handler = async (event) => {
