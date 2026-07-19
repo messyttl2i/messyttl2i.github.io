@@ -11,7 +11,7 @@ function getRuntimeConfig() {
 
 function getSiteUrl() {
   // 1. Manual override (highest priority)
-  const manual = (process.env.SITE_URL || process.env.NETLIFY_SITE_URL || '').trim();
+  const manual = (process.env.SITE_URL || '').trim();
   if (manual) return manual.replace(/\/$/, '');
   // 2. Vercel stable production URL (set automatically since 2023)
   const prod = (process.env.VERCEL_PROJECT_PRODUCTION_URL || '').trim();
@@ -114,7 +114,7 @@ module.exports = async (req, res) => {
   if (!config.merchantId) missing.push('ECPAY_MERCHANT_ID');
   if (!config.hashKey) missing.push('ECPAY_LOGISTICS_HASH_KEY / ECPAY_HASH_KEY');
   if (!config.hashIv) missing.push('ECPAY_LOGISTICS_HASH_IV / ECPAY_HASH_IV');
-  if (!siteUrl) missing.push('SITE_URL (or VERCEL_PROJECT_PRODUCTION_URL)');
+  if (!siteUrl) missing.push('SITE_URL (or VERCEL_PROJECT_PRODUCTION_URL / VERCEL_URL)');
   if (missing.length) {
     res.status(500).json({ success: false, error: 'MissingEcpayLogisticsConfig', message: `Missing config: ${missing.join(', ')}`, missing });
     return;

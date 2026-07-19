@@ -1,4 +1,0 @@
-// ecpay-payment.js
-
-const NETLIFY_SITE_URL = (process.env.SITE_URL || process.env.NETLIFY_SITE_URL || '').replace(/\/$/, '');
-// ... rest of the code ...
