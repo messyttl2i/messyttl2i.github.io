@@ -8,7 +8,7 @@ const SENDER_PHONE = String(process.env.ECPAY_SENDER_PHONE || '').replace(/[^\d]
 const ECPAY_LOGISTICS_CREATE_URL = process.env.ECPAY_LOGISTICS_CREATE_URL || 'https://logistics.ecpay.com.tw/Express/Create';
 
 function getSiteUrl() {
-  const manual = (process.env.SITE_URL || process.env.NETLIFY_SITE_URL || '').trim();
+  const manual = (process.env.SITE_URL || '').trim();
   if (manual) return manual.replace(/\/$/, '');
   const prod = (process.env.VERCEL_PROJECT_PRODUCTION_URL || '').trim();
   if (prod) return `https://${prod}`.replace(/\/$/, '');
@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
   if (!MERCHANT_ID) missing.push('ECPAY_MERCHANT_ID');
   if (!HASH_KEY) missing.push('ECPAY_LOGISTICS_HASH_KEY / ECPAY_HASH_KEY');
   if (!HASH_IV) missing.push('ECPAY_LOGISTICS_HASH_IV / ECPAY_HASH_IV');
-  if (!siteUrl) missing.push('SITE_URL (or VERCEL_PROJECT_PRODUCTION_URL)');
+  if (!siteUrl) missing.push('SITE_URL (or VERCEL_PROJECT_PRODUCTION_URL / VERCEL_URL)');
   if (!/^\d{10}$/.test(SENDER_PHONE)) missing.push('ECPAY_SENDER_PHONE (must be 10 digits)');
   if (missing.length) {
     res.status(500).json({ success: false, error: 'MissingEcpayLogisticsConfig', missing });

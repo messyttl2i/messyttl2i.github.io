@@ -513,6 +513,7 @@ const EMAP_TIMEOUT_MS = 5 * 60 * 1000;
 let checkoutStep = 1;
 const checkoutFormData = { name: '', phone: '', shipping: 'seven-eleven-pickup', storeId: '', storeInfo: null, useCoupon: false, couponAmount: 0 };
 let eMapTimeoutTimer = null;
+let eMapPopupRef = null;
 
 (function initSession() {
     const session = JSON.parse(sessionStorage.getItem('messy_session'));
@@ -1101,7 +1102,7 @@ async function submitEcpayPayment() {
         const logisticsResp = logisticsResult.data;
         const logisticsData = logisticsResp.data || logisticsResp;
         const callbackBase = logisticsResult.base || getFunctionBaseUrl();
-        const paymentResult = await postToFunctionWithFallback('ecpay-payment', { MerchantTradeNo: logisticsData.MerchantTradeNo || merchantTradeNo, MerchantTradeDate: getMerchantTradeDate(), TotalAmount: totalAmount, TradeDesc: 'MessyTT&L2i訂單', Items: cart.map((item) => ({ name: item.name, qty: item.qty })), ReturnURL: buildFunctionUrl(callbackBase, 'ecpay-payment'), OrderResultURL: `${returnBase}?payment=success&order=${merchantTradeNo}`, AllPayLogisticsID: logisticsData.AllPayLogisticsID || '', CVSStoreID: checkoutFormData.storeId });
+        const paymentResult = await postToFunctionWithFallback('ecpay-payment', { MerchantTradeNo: logisticsData.MerchantTradeNo || merchantTradeNo, MerchantTradeDate: getMerchantTradeDate(), TotalAmount: totalAmount, TradeDesc: 'MessyTT&L2i訂單', Items: cart.map((item) => ({ name: item.name, qty: item.qty })), ReturnURL: buildFunctionUrl(callbackBase, 'ecpay-payment-callback'), OrderResultURL: `${returnBase}?payment=success&order=${merchantTradeNo}`, AllPayLogisticsID: logisticsData.AllPayLogisticsID || '', CVSStoreID: checkoutFormData.storeId });
         const paymentResp = paymentResult.data;
         const paymentData = paymentResp.data || paymentResp;
         const couponValue = checkoutFormData.useCoupon ? Math.max(0, getCartSubtotal() + shippingFee - totalAmount) : 0;
